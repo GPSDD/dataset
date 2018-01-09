@@ -54,12 +54,41 @@ class DatasetService {
         }
     }
 
+    static getPublishedQuery(query) {
+        let publishedQuery;
+        if (query.published === 'true') {
+            if (query.application) {
+                if (query.application.indexOf('@') >= 0) {
+                    publishedQuery = {
+                        $all: query.application.split('@').map(elem => elem.trim())
+                    };
+                } else {
+                    publishedQuery = {
+                        $in: query.application.split(',').map(elem => elem.trim())
+                    };
+                }
+            } else {
+                publishedQuery = {
+                    $exists: true, $ne: []
+                };
+            }
+        } else if (query.published === 'false') {
+            publishedQuery = {
+                $size: 0
+            };
+        }
+        return publishedQuery;
+    }
+
     static getFilteredQuery(query, ids = []) {
         if (!query.application && query.app) {
             query.application = query.app;
         }
         if (!query.env) { // default value
             query.env = 'production';
+        }
+        if (query.published === 'true' || query.published === 'false') {
+            query.published = DatasetService.getPublishedQuery(query);
         }
         if (query.userId) {
             query.userId = {
@@ -70,7 +99,7 @@ class DatasetService {
         Object.keys(query).forEach((param) => {
             if (datasetAttributes.indexOf(param) < 0 && param !== 'usersRole') {
                 delete query[param];
-            } else if (param !== 'env' && param !== 'userId' && param !== 'usersRole') {
+            } else if (param !== 'env' && param !== 'userId' && param !== 'usersRole' && typeof query[param] === 'string') {
                 switch (Dataset.schema.paths[param].instance) {
 
                 case 'String':

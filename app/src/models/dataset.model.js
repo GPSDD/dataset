@@ -31,7 +31,7 @@ const Dataset = new Schema({
     geoInfo: { type: Boolean, required: true, default: false },
     protected: { type: Boolean, required: true, default: false },
     taskId: { type: String, required: false, trim: true, default: null },
-    subscribable: { type: Schema.Types.Mixed },
+    subscribable: { type: Schema.Types.Mixed, default: {} },
     blockchain: {
         _id: false,
         id: { type: String, required: false, trim: true },
