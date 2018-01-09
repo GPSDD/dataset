@@ -67,7 +67,6 @@ class DatasetService {
             };
         }
         const datasetAttributes = Object.keys(Dataset.schema.paths);
-        logger.debug('Object.keys(query)', Object.keys(query));
         Object.keys(query).forEach((param) => {
             if (datasetAttributes.indexOf(param) < 0 && param !== 'usersRole') {
                 delete query[param];
@@ -105,9 +104,9 @@ class DatasetService {
                 query.env = {
                     $in: query[param].split(',')
                 };
-            } else if (param === 'usersRole'){
+            } else if (param === 'usersRole') {
                 logger.debug('Params users roles');
-                
+
                 query.userId = Object.assign({}, query.userId || {}, {
                     $in: query[param]
                 });
@@ -187,7 +186,7 @@ class DatasetService {
             tableName: DatasetService.getTableName(dataset),
             overwrite: dataset.overwrite || dataset.dataOverwrite,
             status: dataset.connectorType === 'wms' ? 'saved' : 'pending',
-            published: user.role === 'ADMIN' ? dataset.published : false,
+            published: user.role === 'ADMIN' ? (dataset.published || dataset.application) : [],
             subscribable: dataset.subscribable,
             protected: dataset.protected,
             verified: dataset.verified,
