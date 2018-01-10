@@ -216,7 +216,7 @@ class DatasetService {
             dataset.connectorUrl = await FileDataService.copyFile(dataset.connectorUrl);
         }
         if (dataset.published instanceof Array) {
-            dataset.published = intersectionDestructive(dataset.published.sort(), dataset.application.sort());
+            dataset.published = intersectionSafe(dataset.published.sort(), dataset.application.sort());
         }
         logger.info(`[DBACCESS-SAVE]: dataset.name: ${dataset.name}`);
         let newDataset = await new Dataset({
