@@ -15,6 +15,24 @@ const slug = require('slug');
 const stage = process.env.NODE_ENV;
 const ObjectId = require('mongoose').Types.ObjectId;
 
+function intersectionSafe(a, b) {
+    let ai = 0;
+    let bi = 0;
+    const result = [];
+    while (ai < a.length && bi < b.length) {
+        if (a[ai] < b[bi]) {
+            ai++;
+        } else if (a[ai] > b[bi]) {
+            bi++;
+        } else {
+            result.push(a[ai]);
+            ai++;
+            bi++;
+        }
+    }
+    return result;
+}
+
 class DatasetService {
 
     static async getSlug(name) {
@@ -197,6 +215,9 @@ class DatasetService {
         if (dataset.connectorUrl && dataset.connectorUrl.indexOf('rw.dataset.raw') >= 0) {
             dataset.connectorUrl = await FileDataService.copyFile(dataset.connectorUrl);
         }
+        if (dataset.published instanceof Array) {
+            dataset.published = intersectionDestructive(dataset.published.sort(), dataset.application.sort());
+        }
         logger.info(`[DBACCESS-SAVE]: dataset.name: ${dataset.name}`);
         let newDataset = await new Dataset({
             name: dataset.name,
@@ -335,8 +356,9 @@ class DatasetService {
         } else if (dataset.dataOverwrite === false || dataset.dataOverwrite === true) {
             currentDataset.overwrite = dataset.dataOverwrite;
         }
-        if ((dataset.published === false || dataset.published === true) && user.role === 'ADMIN') {
-            currentDataset.published = dataset.published;
+        if (dataset.published instanceof Array && user.role === 'ADMIN') {
+            const apps = dataset.application || currentDataset.application;
+            currentDataset.published = intersectionSafe(dataset.published.sort(), apps.sort());
         }
         if ((dataset.verified === false || dataset.verified === true)) {
             currentDataset.verified = dataset.verified;
