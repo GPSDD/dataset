@@ -138,7 +138,13 @@ class DatasetService {
                     }
                     break;
                 case 'Mixed':
-                    query[param] = { $ne: null };
+                    if (query[param] === 'true'){
+                        query[param] = { $exists: true, $ne: {} };
+                    } else {
+                        query[param] = { $eq: {} };
+                    }
+
+                    
                     break;
                 case 'Date':
                     query[param] = query[param];
