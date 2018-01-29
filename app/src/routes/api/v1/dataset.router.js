@@ -187,6 +187,17 @@ class DatasetRouter {
             ctx.query.usersRole = await UserService.getUsersWithRole(ctx.query['user.role']);
             logger.debug('Ids from users with role', ctx.query.usersRole);
         }
+        if (Object.keys(query).find(el => el.indexOf('collection') >= 0)) {
+            logger.debug('Obtaining collections');
+            const userId = ctx.query.loggedUser ? JSON.parse(ctx.query.loggedUser).id : null;
+            if (userId){ 
+                ctx.query.ids  = await RelationshipsService.getCollections(ctx.query['collection'], ctx.query.application || ctx.query.app, userId);
+                ctx.query.ids = ctx.query.ids.join(',');
+            } else {
+                ctx.query.ids = '';
+            }
+            logger.debug('Ids from collections', ctx.query.collections);
+        }
         // Links creation
         const clonedQuery = Object.assign({}, query);
         delete clonedQuery['page[size]'];
