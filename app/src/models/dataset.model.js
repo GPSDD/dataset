@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 const mongoosePaginate = require('mongoose-paginate');
 const uuidV4 = require('uuid/v4');
+
 const Schema = mongoose.Schema;
 const STATUS = require('app.constants').STATUS;
 
@@ -10,9 +11,7 @@ const Dataset = new Schema({
     slug: { type: String, required: true, unique: true, trim: true },
     type: { type: String, required: false, trim: true, default: null },
     subtitle: { type: String, required: false, trim: true, default: null },
-    application: [
-        { type: String, required: true, trim: true }
-    ],
+    application: { type: String, required: true, trim: true },
     dataPath: { type: String, required: false, trim: true, default: null },
     attributesPath: { type: String, required: false, trim: true, default: null },
     connectorType: { type: String, required: true, trim: true },

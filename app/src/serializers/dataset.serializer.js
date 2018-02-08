@@ -10,7 +10,6 @@ class DatasetSerializer {
                 slug: el.slug,
                 type: el.type,
                 subtitle: el.subtitle,
-                application: el.application,
                 dataPath: el.dataPath,
                 attributesPath: el.attributesPath,
                 connectorType: el.connectorType,

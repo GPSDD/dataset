@@ -4,7 +4,6 @@ const Dataset = require('models/dataset.model');
 const RelationshipsService = require('services/relationships.service');
 const ctRegisterMicroservice = require('ct-register-microservice-node');
 const SyncService = require('services/sync.service');
-const DatasetDuplicated = require('errors/datasetDuplicated.error');
 const FileDataService = require('services/fileDataService.service');
 const DatasetNotFound = require('errors/datasetNotFound.error');
 const DatasetProtected = require('errors/datasetProtected.error');
@@ -12,8 +11,9 @@ const ConnectorUrlNotValid = require('errors/connectorUrlNotValid.error');
 const SyncError = require('errors/sync.error');
 const GraphService = require('services/graph.service');
 const slug = require('slug');
+
 const stage = process.env.NODE_ENV;
-const ObjectId = require('mongoose').Types.ObjectId;
+
 
 class DatasetService {
 
@@ -21,19 +21,22 @@ class DatasetService {
         let valid = false;
         let slugTemp = null;
         let i = 0;
+        let currentDataset;
         while (!valid) {
             slugTemp = slug(name);
             if (i > 0) {
                 slugTemp += `_${i}`;
             }
-            const currentDataset = await Dataset.findOne({
+            currentDataset = await Dataset.findOne({
                 slug: slugTemp
             }).exec();
             if (!currentDataset) {
-                return slugTemp;
+                valid = true;
+            } else {
+                i += 1;
             }
-            i++;
         }
+        return slugTemp;
     }
 
     static getTableName(dataset) {
@@ -148,7 +151,7 @@ class DatasetService {
         return filteredSort;
     }
 
-    static async get(id, query = {}) {
+    static async get(application, id, query = {}) {
         logger.debug(`[DatasetService]: Getting dataset with id:  ${id}`);
         logger.info(`[DBACCESS-FIND]: dataset.id: ${id}`);
         let dataset = await Dataset.findById(id).exec() || await Dataset.findOne({
@@ -160,12 +163,12 @@ class DatasetService {
             throw new DatasetNotFound(`Dataset with id '${id}' doesn't exist`);
         }
         if (includes.length > 0) {
-            dataset = await RelationshipsService.getRelationships([dataset], includes, Object.assign({}, query));
+            dataset = await RelationshipsService.getRelationships(application, [dataset], includes, Object.assign({}, query));
         }
         return dataset;
     }
 
-    static async create(dataset, user) {
+    static async create(application, dataset, user) {
         logger.debug(`[DatasetService]: Getting dataset with name:  ${dataset.name}`);
         logger.info(`[DBACCES-FIND]: dataset.name: ${dataset.name}`);
         const tempSlug = await DatasetService.getSlug(dataset.name);
@@ -179,7 +182,7 @@ class DatasetService {
             slug: tempSlug,
             type: dataset.type,
             subtitle: dataset.subtitle,
-            application: dataset.application,
+            application,
             dataPath: dataset.dataPath,
             attributesPath: dataset.attributesPath,
             connectorType: dataset.connectorType,
@@ -225,7 +228,7 @@ class DatasetService {
                 }
             }
             try {
-                await RelationshipsService.createVocabularies(newDataset._id, dataset.vocabularies);
+                await RelationshipsService.createVocabularies(application, newDataset._id, dataset.vocabularies);
             } catch (err) {
                 newDataset.errorMessage = err.message;
                 newDataset = await DatasetService.update(newDataset._id, newDataset, {
@@ -257,6 +260,7 @@ class DatasetService {
             await ctRegisterMicroservice.requestToMicroservice({
                 uri: `/widget/change-environment/${datasetId}/${env}`,
                 method: 'PATCH',
+                application,
                 json: true
             });
         } catch (err) {
@@ -267,6 +271,7 @@ class DatasetService {
             await ctRegisterMicroservice.requestToMicroservice({
                 uri: `/layer/change-environment/${datasetId}/${env}`,
                 method: 'PATCH',
+                application,
                 json: true
             });
         } catch (err) {
@@ -294,7 +299,6 @@ class DatasetService {
         const tableName = DatasetService.getTableName(dataset);
         currentDataset.name = dataset.name || currentDataset.name;
         currentDataset.subtitle = dataset.subtitle || currentDataset.subtitle;
-        currentDataset.application = dataset.application || currentDataset.application;
         currentDataset.dataPath = dataset.dataPath || currentDataset.dataPath;
         currentDataset.attributesPath = dataset.attributesPath || currentDataset.attributesPath;
         currentDataset.connectorType = dataset.connectorType || currentDataset.connectorType;
@@ -371,7 +375,8 @@ class DatasetService {
         logger.info('Deleting widgets of dataset', datasetId);
         await ctRegisterMicroservice.requestToMicroservice({
             uri: `/dataset/${datasetId}/widget`,
-            method: 'DELETE'
+            method: 'DELETE',
+            application
         });
     }
 
@@ -379,7 +384,8 @@ class DatasetService {
         logger.info('Deleting layers of dataset', datasetId);
         await ctRegisterMicroservice.requestToMicroservice({
             uri: `/dataset/${datasetId}/layer`,
-            method: 'DELETE'
+            method: 'DELETE',
+            application
         });
     }
 
@@ -387,7 +393,8 @@ class DatasetService {
         logger.info('Deleting layers of dataset', datasetId);
         await ctRegisterMicroservice.requestToMicroservice({
             uri: `/dataset/${datasetId}/metadata`,
-            method: 'DELETE'
+            method: 'DELETE',
+            application
         });
     }
 
@@ -397,6 +404,7 @@ class DatasetService {
             const layers = await ctRegisterMicroservice.requestToMicroservice({
                 uri: `/dataset/${id}/layer?protected=true`,
                 method: 'GET',
+                application,
                 json: true
             });
             logger.debug(layers);
@@ -411,6 +419,7 @@ class DatasetService {
             const widgets = await ctRegisterMicroservice.requestToMicroservice({
                 uri: `/dataset/${id}/widget?protected=true`,
                 method: 'GET',
+                application,
                 json: true
             });
             if (widgets && widgets.data.length > 0) {
@@ -438,65 +447,53 @@ class DatasetService {
         }
         await DatasetService.checkSecureDeleteResources(id);
 
-        logger.info('Checking user apps');
-        user.extraUserData.apps.forEach(app => {
-            const idx = currentDataset.application.indexOf(app);
-            if (idx > -1) {
-                currentDataset.application.splice(idx, 1);
-            }
-        });
-        let deletedDataset;
-        if (currentDataset.application.length > 0) {
-            logger.info(`[DBACCESS-SAVE]: dataset.id: ${id}`);
-            deletedDataset = await currentDataset.save();
-        } else {
-            logger.info(`[DBACCESS-DELETE]: dataset.id: ${id}`);
-            if (currentDataset.connectorType === 'document') {
-                try {
-                    await ctRegisterMicroservice.requestToMicroservice({
-                        uri: `/document/${currentDataset._id}`,
-                        method: 'DELETE',
-                        json: true
-                    });
-                    SyncService.delete(currentDataset._id);
-                } catch (err) {
-                    logger.error(err.message);
-                }
-            }
-            logger.debug('[DatasetService]: Deleting in graph');
+        logger.info(`[DBACCESS-DELETE]: dataset.id: ${id}`);
+        if (currentDataset.connectorType === 'document') {
             try {
-                await GraphService.deleteDataset(id);
+                await ctRegisterMicroservice.requestToMicroservice({
+                    uri: `/document/${currentDataset._id}`,
+                    method: 'DELETE',
+                    application,
+                    json: true
+                });
+                SyncService.delete(currentDataset._id);
             } catch (err) {
-                logger.error('Error removing dataset of the graph', err);
+                logger.error(err.message);
             }
-
-            logger.debug('[DatasetService]: Deleting layers');
-            try {
-                await DatasetService.deleteLayers(id);
-            } catch (err) {
-                logger.error('Error removing layers of the dataset', err);
-            }
-
-            logger.debug('[DatasetService]: Deleting widgets');
-            try {
-                await DatasetService.deleteWidgets(id);
-            } catch (err) {
-                logger.error('Error removing widgets', err);
-            }
-
-            logger.debug('[DatasetService]: Deleting metadata');
-            try {
-                await DatasetService.deleteMetadata(id);
-            } catch (err) {
-                logger.error('Error removing metadata', err);
-            }
-            // remove the dataset at the end
-            deletedDataset = await currentDataset.remove();
         }
+        logger.debug('[DatasetService]: Deleting in graph');
+        try {
+            await GraphService.deleteDataset(id);
+        } catch (err) {
+            logger.error('Error removing dataset of the graph', err);
+        }
+
+        logger.debug('[DatasetService]: Deleting layers');
+        try {
+            await DatasetService.deleteLayers(id);
+        } catch (err) {
+            logger.error('Error removing layers of the dataset', err);
+        }
+
+        logger.debug('[DatasetService]: Deleting widgets');
+        try {
+            await DatasetService.deleteWidgets(id);
+        } catch (err) {
+            logger.error('Error removing widgets', err);
+        }
+
+        logger.debug('[DatasetService]: Deleting metadata');
+        try {
+            await DatasetService.deleteMetadata(id);
+        } catch (err) {
+            logger.error('Error removing metadata', err);
+        }
+        // remove the dataset at the end
+        const deletedDataset = await currentDataset.remove();
         return deletedDataset;
     }
 
-    static async getAll(query = {}) {
+    static async getAll(application, query = {}) {
         logger.debug(`[DatasetService]: Getting all datasets`);
         const sort = query.sort || '';
         const page = query['page[number]'] ? parseInt(query['page[number]'], 10) : 1;
@@ -514,12 +511,12 @@ class DatasetService {
         let pages = await Dataset.paginate(filteredQuery, options);
         pages = Object.assign({}, pages);
         if (includes.length > 0) {
-            pages.docs = await RelationshipsService.getRelationships(pages.docs, includes, Object.assign({}, query));
+            pages.docs = await RelationshipsService.getRelationships(application, pages.docs, includes, Object.assign({}, query));
         }
         return pages;
     }
 
-    static async clone(id, dataset, user, fullCloning = false) {
+    static async clone(application, id, dataset, user, fullCloning = false) {
         logger.debug(`[DatasetService]: Getting dataset with id:  ${id}`);
         logger.info(`[DBACCESS-FIND]: dataset.id: ${id}`);
         const currentDataset = await Dataset.findById(id).exec() || await Dataset.findOne({
@@ -532,7 +529,7 @@ class DatasetService {
         const newDataset = {};
         newDataset.name = `${currentDataset.name} - ${new Date().getTime()}`;
         newDataset.subtitle = currentDataset.subtitle;
-        newDataset.application = dataset.application;
+        newDataset.application = currentDataset.application;
         newDataset.dataPath = 'data';
         newDataset.attributesPath = currentDataset.attributesPath;
         newDataset.connectorType = 'document';
@@ -561,8 +558,8 @@ class DatasetService {
             }
         }
         if (fullCloning) {
-            RelationshipsService.cloneVocabularies(id, createdDataset.toObject()._id);
-            RelationshipsService.cloneMetadatas(id, createdDataset.toObject()._id);
+            RelationshipsService.cloneVocabularies(application, id, createdDataset.toObject()._id);
+            RelationshipsService.cloneMetadatas(application, id, createdDataset.toObject()._id);
         }
         return createdDataset;
     }
@@ -570,9 +567,7 @@ class DatasetService {
     static async hasPermission(id, user) {
         let permission = true;
         const dataset = await DatasetService.get(id);
-        const appPermission = dataset.application.find(datasetApp =>
-            user.extraUserData.apps.find(app => app === datasetApp)
-        );
+        const appPermission = user.extraUserData.apps.indexOf(dataset.application) > -1;
         if (!appPermission) {
             permission = false;
         }

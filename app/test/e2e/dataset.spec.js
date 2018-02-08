@@ -78,7 +78,7 @@ describe('E2E test', () => {
         const timestamp = new Date().getTime();
         const dataset = {
             name: `Carto DB Dataset - ${timestamp}`,
-            application: ['rw'],
+            application: 'rw',
             connectorType: 'rest',
             provider: 'cartodb',
             env: 'production',
@@ -99,7 +99,6 @@ describe('E2E test', () => {
         response.status.should.equal(200);
         response.body.should.have.property('data').and.be.a.Object();
         createdDataset.should.have.property('name').and.be.exactly(`Carto DB Dataset - ${timestamp}`);
-        createdDataset.application.should.be.an.instanceOf(Array).and.have.lengthOf(1);
         createdDataset.should.have.property('connectorType').and.be.exactly('rest');
         createdDataset.should.have.property('provider').and.be.exactly('cartodb');
         createdDataset.should.have.property('connectorUrl').and.be.exactly('https://wri-01.carto.com/tables/wdpa_protected_areas/table');
@@ -117,7 +116,7 @@ describe('E2E test', () => {
         const timestamp = new Date().getTime();
         const dataset = {
             name: `FeatureServer Dataset - ${timestamp}`,
-            application: ['gfw', 'rw'],
+            application: 'rw',
             connectorType: 'rest',
             provider: 'featureservice',
             env: 'production',
@@ -137,7 +136,6 @@ describe('E2E test', () => {
         response.status.should.equal(200);
         response.body.should.have.property('data').and.be.a.Object();
         createdDataset.should.have.property('name').and.be.exactly(`FeatureServer Dataset - ${timestamp}`);
-        createdDataset.application.should.be.an.instanceOf(Array).and.have.lengthOf(2);
         createdDataset.should.have.property('connectorType').and.be.exactly('rest');
         createdDataset.should.have.property('provider').and.be.exactly('featureservice');
         createdDataset.should.have.property('connectorUrl').and.be.exactly('http://services6.arcgis.com/bIipaUHHcz1GaAsv/arcgis/rest/services/Mineral_Development_Agreements/FeatureServer/0?f=pjson');
@@ -155,7 +153,7 @@ describe('E2E test', () => {
         const timestamp = new Date().getTime();
         const dataset = {
             name: `JSON Dataset - ${timestamp}`,
-            application: ['forest-atlas', 'rw'],
+            application: 'rw',
             connectorType: 'document',
             env: 'production',
             provider: 'json',
@@ -186,7 +184,6 @@ describe('E2E test', () => {
         response.status.should.equal(200);
         response.body.should.have.property('data').and.be.a.Object();
         createdDataset.should.have.property('name').and.be.exactly(`JSON Dataset - ${timestamp}`);
-        createdDataset.application.should.be.an.instanceOf(Array).and.have.lengthOf(2);
         createdDataset.should.have.property('connectorType').and.be.exactly('document');
         createdDataset.should.have.property('provider').and.be.exactly('json');
         createdDataset.should.have.property('connectorUrl');
@@ -246,7 +243,7 @@ describe('E2E test', () => {
         try {
             response = await request.patch(`${BASE_URL}/dataset/${referencedDataset.id}`).send({
                 name: 'other name',
-                application: ['gfw', 'rw'],
+                application: 'rw',
                 loggedUser: ROLES.ADMIN
             });
             dataset = deserializeDataset(response);
@@ -256,7 +253,7 @@ describe('E2E test', () => {
         response.status.should.equal(200);
         response.body.should.have.property('data').and.be.a.Object();
         dataset.should.have.property('name').and.be.exactly('other name');
-        dataset.application.should.be.an.instanceOf(Array).and.have.lengthOf(2);
+        dataset.should.have.property('provider').and.be.exactly('rw');
         dataset.should.have.property('connectorType').and.be.exactly('rest');
         dataset.should.have.property('provider').and.be.exactly('cartodb');
         dataset.should.have.property('connectorUrl').and.be.exactly('https://wri-01.carto.com/tables/wdpa_protected_areas/table');

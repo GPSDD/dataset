@@ -11,6 +11,7 @@ class SyncService {
                 uri: '/task/sync-dataset',
                 method: 'POST',
                 json: true,
+                application,
                 body: {
                     datasetId: dataset._id,
                     provider: dataset.provider,
@@ -34,6 +35,7 @@ class SyncService {
                 uri: '/task/sync-dataset/by-dataset',
                 method: 'PUT',
                 json: true,
+                application,
                 body: {
                     datasetId: dataset._id,
                     provider: dataset.provider,
@@ -56,6 +58,7 @@ class SyncService {
             const response = await ctRegisterMicroservice.requestToMicroservice({
                 uri: `/task/sync-dataset/by-dataset/${id}`,
                 method: 'DELETE',
+                application,
                 json: true
             });
             return response;

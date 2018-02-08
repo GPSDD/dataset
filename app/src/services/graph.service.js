@@ -9,6 +9,7 @@ class GraphService {
             return await ctRegisterMicroservice.requestToMicroservice({
                 uri: `/graph/dataset/${id}`,
                 method: 'POST',
+                application,
                 json: true
             });
         } catch (e) {
@@ -22,6 +23,7 @@ class GraphService {
             return await ctRegisterMicroservice.requestToMicroservice({
                 uri: `/graph/dataset/${id}`,
                 method: 'DELETE',
+                application,
                 json: true
             });
         } catch (e) {
@@ -41,6 +43,7 @@ class GraphService {
                 uri: `/graph/dataset/${id}/associate`,
                 method: 'POST',
                 json: true,
+                application,
                 body: {
                     tags
                 }

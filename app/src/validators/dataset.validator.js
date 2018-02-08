@@ -9,7 +9,7 @@ const cronParser = require('cron-parser');
 class DatasetValidator {
 
     static getUser(ctx) {
-        return Object.assign({}, ctx.request.query.loggedUser ? JSON.parse(ctx.request.query.loggedUser) : {}, ctx.request.body.loggedUser);
+        return JSON.parse(ctx.headers.USER_KEY);
     }
 
     static isString(property) {
@@ -155,10 +155,8 @@ class DatasetValidator {
         koaObj.checkBody('name').notEmpty().check(name => DatasetValidator.notEmptyString(name), 'can not be empty');
         koaObj.checkBody('type').optional().check(type => DatasetValidator.isString(type), 'must be a string');
         koaObj.checkBody('subtitle').optional().check(subtitle => DatasetValidator.isString(subtitle), 'must be a string');
-        koaObj.checkBody('application').notEmpty().check(application => DatasetValidator.notEmptyArray(application), 'must be a non-empty array');
         koaObj.checkBody('dataPath').optional().check(dataPath => DatasetValidator.isString(dataPath), 'must be a string');
         koaObj.checkBody('attributesPath').optional().check(attributesPath => DatasetValidator.isString(attributesPath), 'must be a string');
-        // koaObj.checkBody('env').in(['production', 'preproduction']);
         // connectorType
         koaObj.checkBody('connectorType').notEmpty()
         .toLow()
@@ -174,7 +172,7 @@ class DatasetValidator {
         koaObj.checkBody('overwrite').optional().toBoolean();
         koaObj.checkBody('verified').optional().toBoolean();
         koaObj.checkBody('dataOverwrite').optional().toBoolean();
-        koaObj.checkBody('data').optional().check(data => {
+        koaObj.checkBody('data').optional().check((data) => {
             if (DatasetValidator.isArray(data) || DatasetValidator.isObject(data)) {
                 return true;
             }
@@ -198,7 +196,6 @@ class DatasetValidator {
         koaObj.checkBody('name').optional().check(name => DatasetValidator.notEmptyString(name), 'can not be empty');
         koaObj.checkBody('type').optional().check(type => DatasetValidator.isString(type), 'must be a string');
         koaObj.checkBody('subtitle').optional().check(subtitle => DatasetValidator.isString(subtitle), 'must be a string');
-        koaObj.checkBody('application').optional().check(application => DatasetValidator.notEmptyArray(application), 'must be a non-empty array');
         koaObj.checkBody('dataPath').optional().check(dataPath => DatasetValidator.isString(dataPath), 'must be a string');
         koaObj.checkBody('attributesPath').optional().check(attributesPath => DatasetValidator.isString(attributesPath), 'must be a string');
         koaObj.checkBody('connectorType').optional().check(connectorType => DatasetValidator.isString(connectorType), 'must be a string');
@@ -211,7 +208,7 @@ class DatasetValidator {
         koaObj.checkBody('dataOverwrite').optional().toBoolean();
         koaObj.checkBody('errorMessage').optional().check(errorMessage => DatasetValidator.isString(errorMessage), 'must be a string');
         koaObj.checkBody('taskId').optional().check(taskId => DatasetValidator.isString(taskId), 'must be a string');
-        koaObj.checkBody('data').optional().check(data => {
+        koaObj.checkBody('data').optional().check((data) => {
             if (DatasetValidator.isArray(data) || DatasetValidator.isObject(data)) {
                 return true;
             }
@@ -233,7 +230,6 @@ class DatasetValidator {
 
     static async validateCloning(koaObj) {
         logger.info('Validating Dataset Cloning');
-        koaObj.checkBody('application').notEmpty().check(application => DatasetValidator.notEmptyArray(application), 'must be a non-empty array');
         koaObj.checkBody('datasetUrl').notEmpty().isAscii();
         if (koaObj.errors) {
             logger.error('Error validating dataset creation');
@@ -246,20 +242,15 @@ class DatasetValidator {
         logger.info('Validating Dataset Raw Upload');
         koaObj.checkFile('dataset').notEmpty();
         koaObj.checkBody('provider').in(CONNECTOR_TYPES.document.provider.concat(RASDAMAN_TYPES));
-        if (koaObj.request.body.fields.loggedUser) {
-            const loggedUser = JSON.parse(koaObj.request.body.fields.loggedUser);
-            if (loggedUser.role === 'USER') {
-                koaObj.checkFile('dataset').size(0, 4 * 1024 * 1024, 'file too large');
-            }
+        const user = JSON.parse(koaObj.headers.USER_KEY);
+        if (user.role === 'USER') {
+            koaObj.checkFile('dataset').size(0, 4 * 1024 * 1024, 'file too large');
         }
         if (koaObj.request.body.files) {
             koaObj.checkFile('dataset').suffixIn(koaObj.request.body.fields.provider);
         }
         if (koaObj.errors) {
             logger.error('Errors uploading', koaObj.errors);
-            // koaObj.errors = [{
-            //     dataset: 'it has to be a valid file'
-            // }];
             logger.error('Error validating dataset creation');
             throw new DatasetNotValid(koaObj.errors);
         }

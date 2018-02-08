@@ -1,6 +1,6 @@
 {
-  "name": "rw-dataset-microservice",
-  "version": "1.2.0",
+  "name": "dataset-microservice",
+  "version": "1.5.0",
   "description": "Dataset Microservice",
   "repository": "https://github.com/resource-watch/dataset",
   "main": "index.js",
@@ -11,7 +11,6 @@
   "keywords": [
     "dataset",
     "koa2",
-    "rw",
     "nodejs"
   ],
   "author": "https://github.com/archelogos",

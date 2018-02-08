@@ -1,4 +1,3 @@
-const fs = require('fs');
 const Router = require('koa-router');
 const koaMulter = require('koa-multer');
 const logger = require('logger');
@@ -23,7 +22,7 @@ const router = new Router({
 
 koaMulter({ dest: 'uploads/' });
 
-const serializeObjToQuery = (obj) => Object.keys(obj).reduce((a, k) => {
+const serializeObjToQuery = obj => Object.keys(obj).reduce((a, k) => {
     a.push(`${k}=${encodeURIComponent(obj[k])}`);
     return a;
 }, []).join('&');
@@ -31,17 +30,18 @@ const serializeObjToQuery = (obj) => Object.keys(obj).reduce((a, k) => {
 class DatasetRouter {
 
     static getUser(ctx) {
-        let user = Object.assign({}, ctx.request.query.loggedUser ? JSON.parse(ctx.request.query.loggedUser) : {}, ctx.request.body.loggedUser);
-        if (ctx.request.body.fields) {
-            user = Object.assign(user, JSON.parse(ctx.request.body.fields.loggedUser));
-        }
-        return user;
+        return JSON.parse(ctx.headers.USER_KEY);
+    }
+
+    static getApplication(ctx) {
+        return JSON.parse(ctx.headers.APP_KEY).application;
     }
 
     static notifyAdapter(ctx, dataset) {
         const connectorType = dataset.connectorType;
         const provider = dataset.provider;
         const clonedDataset = Object.assign({}, dataset.toObject());
+        const application = DatasetRouter.getApplication(ctx);
         clonedDataset.id = dataset._id;
         clonedDataset.connector_url = dataset.connectorUrl;
         clonedDataset.attributes_path = dataset.attributesPath;
@@ -59,17 +59,15 @@ class DatasetRouter {
             }
             uri += `/doc-datasets/${provider}`;
         }
-
         if (ctx.request.method === 'DELETE') {
             uri += `/${dataset.id}`;
         }
-
         const method = ctx.request.method === 'DELETE' ? 'DELETE' : 'POST';
-
         ctRegisterMicroservice.requestToMicroservice({
             uri,
             method,
             json: true,
+            application,
             body: { connector: clonedDataset }
         });
     }
@@ -77,10 +75,10 @@ class DatasetRouter {
     static async get(ctx) {
         const id = ctx.params.dataset;
         logger.info(`[DatasetRouter] Getting dataset with id: ${id}`);
+        const application = DatasetRouter.getApplication(ctx);
         const query = ctx.query;
-        delete query.loggedUser;
         try {
-            const dataset = await DatasetService.get(id, query);
+            const dataset = await DatasetService.get(application, id, query);
             ctx.body = DatasetSerializer.serialize(dataset);
         } catch (err) {
             if (err instanceof DatasetNotFound) {
@@ -94,8 +92,10 @@ class DatasetRouter {
     static async create(ctx) {
         logger.info(`[DatasetRouter] Creating dataset with name: ${ctx.request.body.name}`);
         try {
+            const application = DatasetRouter.getApplication(ctx);
+            let dataset = ctx.request.body;
             const user = DatasetRouter.getUser(ctx);
-            const dataset = await DatasetService.create(ctx.request.body, user);
+            dataset = await DatasetService.create(application, dataset, user);
             try {
                 DatasetRouter.notifyAdapter(ctx, dataset);
             } catch (error) {
@@ -118,8 +118,9 @@ class DatasetRouter {
         const id = ctx.params.dataset;
         logger.info(`[DatasetRouter] Updating dataset with id: ${id}`);
         try {
+            let dataset = ctx.request.body;
             const user = DatasetRouter.getUser(ctx);
-            const dataset = await DatasetService.update(id, ctx.request.body, user);
+            dataset = await DatasetService.update(id, dataset, user);
             ctx.set('cache-control', 'flush');
             ctx.body = DatasetSerializer.serialize(dataset);
         } catch (err) {
@@ -138,8 +139,9 @@ class DatasetRouter {
         const id = ctx.params.dataset;
         logger.info(`[DatasetRouter] Deleting dataset with id: ${id}`);
         try {
+            const application = DatasetRouter.getApplication(ctx);
             const user = DatasetRouter.getUser(ctx);
-            const dataset = await DatasetService.delete(id, user);
+            const dataset = await DatasetService.delete(application, id, user);
             try {
                 DatasetRouter.notifyAdapter(ctx, dataset);
             } catch (error) {
@@ -175,16 +177,16 @@ class DatasetRouter {
 
     static async getAll(ctx) {
         logger.info(`[DatasetRouter] Getting all datasets`);
+        const application = DatasetRouter.getApplication(ctx);
         const query = ctx.query;
-        const userId = ctx.query.loggedUser && ctx.query.loggedUser !== 'null' ? JSON.parse(ctx.query.loggedUser).id : null;
-        delete query.loggedUser;
+        const userId = DatasetRouter.getUser().id;
         if (Object.keys(query).find(el => el.indexOf('vocabulary[') >= 0)) {
-            ctx.query.ids = await RelationshipsService.filterByVocabularyTag(query);
+            ctx.query.ids = await RelationshipsService.filterByVocabularyTag(application, query);
             logger.debug('Ids from vocabulary-tag', ctx.query.ids);
         }
         if (Object.keys(query).find(el => el.indexOf('user.role') >= 0)) {
             logger.debug('Obtaining users with role');
-            ctx.query.usersRole = await UserService.getUsersWithRole(ctx.query['user.role']);
+            ctx.query.usersRole = await UserService.getUsersWithRole(application, ctx.query['user.role']);
             logger.debug('Ids from users with role', ctx.query.usersRole);
         }
         if (Object.keys(query).find(el => el.indexOf('collection') >= 0)) {
@@ -192,7 +194,7 @@ class DatasetRouter {
                 ctx.throw(403, 'Collection filter not authorized');
                 return;
             }
-            ctx.query.ids = await RelationshipsService.getCollections(ctx.query.collection, userId);
+            ctx.query.ids = await RelationshipsService.getCollections(application, ctx.query.collection, userId);
             ctx.query.ids = ctx.query.ids.length > 0 ? ctx.query.ids.join(',') : '';
             logger.debug('Ids from collections', ctx.query.ids);
         }
@@ -201,8 +203,7 @@ class DatasetRouter {
                 ctx.throw(403, 'Fav filter not authorized');
                 return;
             }
-            const app = ctx.query.app || ctx.query.application || 'rw';
-            ctx.query.ids = await RelationshipsService.getFavorites(app, userId);
+            ctx.query.ids = await RelationshipsService.getFavorites(application, userId);
             ctx.query.ids = ctx.query.ids.length > 0 ? ctx.query.ids.join(',') : '';
             logger.debug('Ids from collections', ctx.query.ids);
         }
@@ -214,7 +215,7 @@ class DatasetRouter {
         const serializedQuery = serializeObjToQuery(clonedQuery) ? `?${serializeObjToQuery(clonedQuery)}&` : '?';
         const apiVersion = ctx.mountPath.split('/')[ctx.mountPath.split('/').length - 1];
         const link = `${ctx.request.protocol}://${ctx.request.host}/${apiVersion}${ctx.request.path}${serializedQuery}`;
-        const datasets = await DatasetService.getAll(query);
+        const datasets = await DatasetService.getAll(application, query);
         ctx.body = DatasetSerializer.serialize(datasets, link);
     }
 
@@ -222,9 +223,11 @@ class DatasetRouter {
         const id = ctx.params.dataset;
         logger.info(`[DatasetRouter] Cloning dataset with id: ${id}`);
         try {
+            const application = DatasetRouter.getApplication(ctx);
             const user = DatasetRouter.getUser(ctx);
+            let dataset = ctx.request.body;
             const fullCloning = ctx.query.full === 'true';
-            const dataset = await DatasetService.clone(id, ctx.request.body, user, fullCloning);
+            dataset = await DatasetService.clone(application, id, dataset, user, fullCloning);
             try {
                 DatasetRouter.notifyAdapter(ctx, dataset);
             } catch (error) {
@@ -260,7 +263,6 @@ class DatasetRouter {
         const id = ctx.params.dataset;
         logger.info(`[DatasetRouter] Getting verification with id: ${id}`);
         const query = ctx.query;
-        delete query.loggedUser;
         try {
             const dataset = await DatasetService.get(id, query);
             let verificationData = { message: 'Not verification data' };
@@ -271,7 +273,6 @@ class DatasetRouter {
             ctx.body = verificationData;
         } catch (err) {
             ctx.throw(500, 'Error getting verification data');
-            return;
         }
     }
 
@@ -324,15 +325,11 @@ const authorizationMiddleware = async (ctx, next) => {
             return;
         }
     }
-    const application = ctx.request.query.application ? ctx.request.query.application : ctx.request.body.application;
-    if (application) {
-        const appPermission = application.find(app =>
-            user.extraUserData.apps.find(userApp => userApp === app)
-        );
-        if (!appPermission) {
-            ctx.throw(403, 'Forbidden'); // if manager or admin but no application -> out
-            return;
-        }
+    const application = DatasetRouter.getApplication();
+    const appPermission = user.extraUserData.apps.indexOf(application) > -1;
+    if (!appPermission) {
+        ctx.throw(403, 'Forbidden'); // if manager or admin but no application -> out
+        return;
     }
     const allowedOperations = newDatasetCreation || uploadDataset;
     if ((user.role === 'MANAGER' || user.role === 'ADMIN') && !allowedOperations) {
@@ -360,22 +357,9 @@ const authorizationBigQuery = async (ctx, next) => {
     await next();
 };
 
-const authorizationSubscribable = async (ctx, next) => {
-    logger.info(`[DatasetRouter] Checking if it can update the subscribable prop`);
-    if (ctx.request.body.subscribable) {
-        const user = DatasetRouter.getUser(ctx);
-        if (user.email !== 'sergio.gordillo@vizzuality.com' && user.email !== 'raul.requero@vizzuality.com' && user.email !== 'alicia.arenzana@vizzuality.com') {
-            ctx.throw(401, 'Unauthorized'); // if not logged or invalid ROLE -> out
-            return;
-        }
-    }
-    await next();
-};
-
 router.get('/', DatasetRouter.getAll);
 router.post('/find-by-ids', DatasetRouter.findByIds);
 router.post('/', validationMiddleware, authorizationMiddleware, authorizationBigQuery, DatasetRouter.create);
-// router.post('/', validationMiddleware, authorizationMiddleware, authorizationBigQuery, authorizationSubscribable, DatasetRouter.create);
 router.post('/upload', validationMiddleware, authorizationMiddleware, DatasetRouter.upload);
 
 router.get('/:dataset', DatasetRouter.get);

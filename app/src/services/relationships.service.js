@@ -2,22 +2,14 @@ const logger = require('logger');
 const ctRegisterMicroservice = require('ct-register-microservice-node');
 const INCLUDES = require('app.constants').INCLUDES;
 
-const serializeObjToQuery = (obj) => Object.keys(obj).reduce((a, k) => {
+const serializeObjToQuery = obj => Object.keys(obj).reduce((a, k) => {
     a.push(`${k}=${encodeURIComponent(obj[k])}`);
     return a;
 }, []).join('&');
 
 class RelationshipsService {
 
-    static treatQuery(query) {
-        if (!query.application && query.app) {
-            query.application = query.app;
-        }
-        delete query.includes;
-        return query;
-    }
-
-    static async getResources(ids, includes, query = '', users = []) {
+    static async getResources(application, ids, includes, query = '', users = []) {
         logger.info(`Getting resources of ids: ${ids}`);
         let resources = includes.map(async (include) => {
             const obj = {};
@@ -27,12 +19,6 @@ class RelationshipsService {
                     ids
                 };
                 let version = true;
-                if (include === 'layer' || include === 'widget') {
-                    const apps = query.application || query.app;
-                    if (apps) {
-                        payload.app = apps;
-                    }
-                }
                 if (include === 'vocabulary' || include === 'metadata') {
                     uri = '/dataset';
                 }
@@ -45,9 +31,10 @@ class RelationshipsService {
                 }
                 try {
                     obj[include] = await ctRegisterMicroservice.requestToMicroservice({
-                        uri: `${uri}/${include}/find-by-ids?${serializeObjToQuery(RelationshipsService.treatQuery(query))}`,
+                        uri: `${uri}/${include}/find-by-ids?${serializeObjToQuery(query)}`,
                         method: 'POST',
                         json: true,
+                        application,
                         body: payload,
                         version
                     });
@@ -65,7 +52,7 @@ class RelationshipsService {
                 const data = resources[include].data;
                 const result = {};
                 if (data.length > 0) {
-                    data.forEach(el => {
+                    data.forEach((el) => {
                         if (include === 'vocabulary') { // particular case of vocabulary. it changes the matching attr
                             if (Object.keys(result).indexOf(el.attributes.resource.id) < 0) {
                                 result[el.attributes.resource.id] = [el];
@@ -89,13 +76,13 @@ class RelationshipsService {
         return resources;
     }
 
-    static async getRelationships(datasets, includes, query = '') {
+    static async getRelationships(application, datasets, includes, query = '') {
         logger.info(`Getting relationships of datasets: ${datasets}`);
         datasets.unshift({});
         const map = datasets.reduce((acc, val) => { acc[val._id] = val; return acc; });
         const users = datasets.map(el => el.userId);
         const ids = Object.keys(map);
-        const resources = await RelationshipsService.getResources(ids, includes, query, users);
+        const resources = await RelationshipsService.getResources(application, ids, includes, query, users);
         ids.forEach((id) => {
             includes.forEach((include) => {
                 if (include !== 'user') {
@@ -122,12 +109,13 @@ class RelationshipsService {
         return relationships;
     }
 
-    static async createVocabularies(id, vocabularies) {
+    static async createVocabularies(application, id, vocabularies) {
         try {
             return await ctRegisterMicroservice.requestToMicroservice({
                 uri: `/dataset/${id}/vocabulary`,
                 method: 'POST',
                 json: true,
+                application,
                 body: vocabularies
             });
         } catch (e) {
@@ -135,7 +123,7 @@ class RelationshipsService {
         }
     }
 
-    static async filterByVocabularyTag(query) {
+    static async filterByVocabularyTag(application, query) {
         logger.info(`Getting resources for vocabulary-tag query`);
         let vocabularyQuery = '?';
         Object.keys(query).forEach((key => {
@@ -148,6 +136,7 @@ class RelationshipsService {
         const result = await ctRegisterMicroservice.requestToMicroservice({
             uri: `/dataset/vocabulary/find${vocabularyQuery}`,
             method: 'GET',
+            application,
             json: true,
         });
         let ids = ' ';
@@ -158,12 +147,13 @@ class RelationshipsService {
         return ids;
     }
 
-    static async cloneVocabularies(oldId, newId) {
+    static async cloneVocabularies(application, oldId, newId) {
         try {
             return await ctRegisterMicroservice.requestToMicroservice({
                 uri: `/dataset/${oldId}/vocabulary/clone/dataset`,
                 method: 'POST',
                 json: true,
+                application,
                 body: {
                     newDataset: newId
                 }
@@ -173,12 +163,13 @@ class RelationshipsService {
         }
     }
 
-    static async cloneMetadatas(oldId, newId) {
+    static async cloneMetadatas(application, oldId, newId) {
         try {
             return await ctRegisterMicroservice.requestToMicroservice({
                 uri: `/dataset/${oldId}/metadata/clone`,
                 method: 'POST',
                 json: true,
+                application,
                 body: {
                     newDataset: newId
                 }
@@ -188,12 +179,13 @@ class RelationshipsService {
         }
     }
 
-    static async getCollections(ids, userId) {
+    static async getCollections(application, ids, userId) {
         try {
             const result = await ctRegisterMicroservice.requestToMicroservice({
                 uri: `/collection/find-by-ids`,
                 method: 'POST',
                 json: true,
+                application,
                 body: {
                     ids,
                     userId
@@ -209,14 +201,14 @@ class RelationshipsService {
         }
     }
 
-    static async getFavorites(app, userId) {
+    static async getFavorites(application, userId) {
         try {
             const result = await ctRegisterMicroservice.requestToMicroservice({
                 uri: `/favourite/find-by-user`,
                 method: 'POST',
                 json: true,
+                application,
                 body: {
-                    app,
                     userId
                 }
             });
