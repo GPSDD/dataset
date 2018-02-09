@@ -52,9 +52,19 @@ const ROLES = {
     }
 };
 
+const APPS = {
+    RW: {
+        application: 'rw'
+    },
+    GFW: {
+        application: 'gfw'
+    }
+};
+
 const BASE_URL = 'http://localhost:5000/api/v1';
 
 module.exports = {
     ROLES,
-    BASE_URL
+    BASE_URL,
+    APPS
 };

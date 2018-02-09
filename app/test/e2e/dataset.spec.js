@@ -3,6 +3,7 @@ const nock = require('nock');
 const request = require('superagent').agent();
 const BASE_URL = require('./test.constants').BASE_URL;
 const ROLES = require('./test.constants').ROLES;
+const APPS = require('./test.constants').APPS;
 require('should');
 
 let referencedDataset = null;
@@ -73,12 +74,11 @@ describe('E2E test', () => {
     });
 
     /* Create a Carto Dataset */
-    it('Create a CARTO DB dataset', async() => {
+    it('Create a CARTO DB dataset', async () => {
         let response = null;
         const timestamp = new Date().getTime();
         const dataset = {
             name: `Carto DB Dataset - ${timestamp}`,
-            application: 'rw',
             connectorType: 'rest',
             provider: 'cartodb',
             env: 'production',
@@ -87,9 +87,11 @@ describe('E2E test', () => {
         };
         let createdDataset = null;
         try {
-            response = await request.post(`${BASE_URL}/dataset`).send({
-                dataset,
-                loggedUser: ROLES.ADMIN
+            response = await request.post(`${BASE_URL}/dataset`)
+            .set('app_key', JSON.stringify(APPS.RW))
+            .set('user_key', JSON.stringify(ROLES.ADMIN))
+            .send({
+                dataset
             });
             createdDataset = deserializeDataset(response);
             referencedDataset = response.body.data;
@@ -111,12 +113,11 @@ describe('E2E test', () => {
     });
 
     /* Create a FeatureServer dataset */
-    it('Create a FeatureServer dataset', async() => {
+    it('Create a FeatureServer dataset', async () => {
         let response = null;
         const timestamp = new Date().getTime();
         const dataset = {
             name: `FeatureServer Dataset - ${timestamp}`,
-            application: 'rw',
             connectorType: 'rest',
             provider: 'featureservice',
             env: 'production',
@@ -125,9 +126,11 @@ describe('E2E test', () => {
         };
         let createdDataset = null;
         try {
-            response = await request.post(`${BASE_URL}/dataset`).send({
-                dataset,
-                loggedUser: ROLES.ADMIN
+            response = await request.post(`${BASE_URL}/dataset`)
+            .set('app_key', JSON.stringify(APPS.RW))
+            .set('user_key', JSON.stringify(ROLES.ADMIN))
+            .send({
+                dataset
             });
             createdDataset = deserializeDataset(response);
         } catch (e) {
@@ -148,12 +151,11 @@ describe('E2E test', () => {
     });
 
     /* Create a JSON */
-    it('Create a JSON dataset', async() => {
+    it('Create a JSON dataset', async () => {
         let response = null;
         const timestamp = new Date().getTime();
         const dataset = {
             name: `JSON Dataset - ${timestamp}`,
-            application: 'rw',
             connectorType: 'document',
             env: 'production',
             provider: 'json',
@@ -173,9 +175,11 @@ describe('E2E test', () => {
         };
         let createdDataset = null;
         try {
-            response = await request.post(`${BASE_URL}/dataset`).send({
-                dataset,
-                loggedUser: ROLES.ADMIN
+            response = await request.post(`${BASE_URL}/dataset`)
+            .set('app_key', JSON.stringify(APPS.RW))
+            .set('user_key', JSON.stringify(ROLES.ADMIN))
+            .send({
+                dataset
             });
             createdDataset = deserializeDataset(response);
         } catch (e) {
@@ -196,10 +200,13 @@ describe('E2E test', () => {
     });
 
     /* Get All Datasets */
-    it('Get datasets', async() => {
+    it('Get datasets', async () => {
         let response = null;
         try {
-            response = await request.get(`${BASE_URL}/dataset`).send();
+            response = await request.get(`${BASE_URL}/dataset`)
+            .set('app_key', JSON.stringify(APPS.RW))
+            .set('user_key', JSON.stringify(null))
+            .send();
         } catch (e) {
             logger.error(e);
         }
@@ -209,11 +216,14 @@ describe('E2E test', () => {
     });
 
     /* Get a specific dataset */
-    it('Get one dataset', async() => {
+    it('Get one dataset', async () => {
         let response = null;
         let dataset = null;
         try {
-            response = await request.get(`${BASE_URL}/dataset/${referencedDataset.id}`).send();
+            response = await request.get(`${BASE_URL}/dataset/${referencedDataset.id}`)
+            .set('app_key', JSON.stringify(APPS.RW))
+            .set('user_key', JSON.stringify(null))
+            .send();
             dataset = deserializeDataset(response);
         } catch (e) {
             logger.error(e);
@@ -224,10 +234,13 @@ describe('E2E test', () => {
     });
 
     /* Pagination */
-    it('Get 3 datasets', async() => {
+    it('Get 3 datasets', async () => {
         let response = null;
         try {
-            response = await request.get(`${BASE_URL}/dataset?page[number]=1&page[size]=3`).send();
+            response = await request.get(`${BASE_URL}/dataset?page[number]=1&page[size]=3`)
+            .set('app_key', JSON.stringify(APPS.RW))
+            .set('user_key', JSON.stringify(null))
+            .send();
         } catch (e) {
             logger.error(e);
         }
@@ -237,14 +250,15 @@ describe('E2E test', () => {
     });
 
     /* Update */
-    it('Update a dataset', async() => {
+    it('Update a dataset', async () => {
         let response = null;
         let dataset = null;
         try {
-            response = await request.patch(`${BASE_URL}/dataset/${referencedDataset.id}`).send({
+            response = await request.patch(`${BASE_URL}/dataset/${referencedDataset.id}`)
+            .set('app_key', JSON.stringify(APPS.RW))
+            .set('user_key', JSON.stringify(ROLES.ADMIN))
+            .send({
                 name: 'other name',
-                application: 'rw',
-                loggedUser: ROLES.ADMIN
             });
             dataset = deserializeDataset(response);
         } catch (e) {
@@ -253,7 +267,6 @@ describe('E2E test', () => {
         response.status.should.equal(200);
         response.body.should.have.property('data').and.be.a.Object();
         dataset.should.have.property('name').and.be.exactly('other name');
-        dataset.should.have.property('provider').and.be.exactly('rw');
         dataset.should.have.property('connectorType').and.be.exactly('rest');
         dataset.should.have.property('provider').and.be.exactly('cartodb');
         dataset.should.have.property('connectorUrl').and.be.exactly('https://wri-01.carto.com/tables/wdpa_protected_areas/table');
@@ -266,9 +279,12 @@ describe('E2E test', () => {
     });
 
     /* Delete */
-    it('Not authorized dataset deletion', async() => {
+    it('Not authorized dataset deletion', async () => {
         try {
-            await request.delete(`${BASE_URL}/dataset/${referencedDataset.id}?loggedUser=null`).send();
+            await request.delete(`${BASE_URL}/dataset/${referencedDataset.id}`)
+            .set('app_key', JSON.stringify(APPS.RW))
+            .set('user_key', JSON.stringify(null))
+            .send();
         } catch (e) {
             logger.error(e);
             e.response.status.should.equal(401);

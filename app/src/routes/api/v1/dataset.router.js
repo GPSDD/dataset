@@ -30,11 +30,11 @@ const serializeObjToQuery = obj => Object.keys(obj).reduce((a, k) => {
 class DatasetRouter {
 
     static getUser(ctx) {
-        return JSON.parse(ctx.headers.USER_KEY);
+        return JSON.parse(ctx.headers.user_key) ? JSON.parse(ctx.headers.user_key) : { id: null };
     }
 
     static getApplication(ctx) {
-        return JSON.parse(ctx.headers.APP_KEY).application;
+        return JSON.parse(ctx.headers.app_key).application;
     }
 
     static notifyAdapter(ctx, dataset) {
@@ -141,7 +141,7 @@ class DatasetRouter {
         try {
             const application = DatasetRouter.getApplication(ctx);
             const user = DatasetRouter.getUser(ctx);
-            const dataset = await DatasetService.delete(application, id, user);
+            const dataset = await DatasetService.delete(application, id);
             try {
                 DatasetRouter.notifyAdapter(ctx, dataset);
             } catch (error) {
@@ -179,7 +179,7 @@ class DatasetRouter {
         logger.info(`[DatasetRouter] Getting all datasets`);
         const application = DatasetRouter.getApplication(ctx);
         const query = ctx.query;
-        const userId = DatasetRouter.getUser().id;
+        const userId = DatasetRouter.getUser(ctx).id;
         if (Object.keys(query).find(el => el.indexOf('vocabulary[') >= 0)) {
             ctx.query.ids = await RelationshipsService.filterByVocabularyTag(application, query);
             logger.debug('Ids from vocabulary-tag', ctx.query.ids);
@@ -325,7 +325,7 @@ const authorizationMiddleware = async (ctx, next) => {
             return;
         }
     }
-    const application = DatasetRouter.getApplication();
+    const application = DatasetRouter.getApplication(ctx);
     const appPermission = user.extraUserData.apps.indexOf(application) > -1;
     if (!appPermission) {
         ctx.throw(403, 'Forbidden'); // if manager or admin but no application -> out
@@ -334,7 +334,7 @@ const authorizationMiddleware = async (ctx, next) => {
     const allowedOperations = newDatasetCreation || uploadDataset;
     if ((user.role === 'MANAGER' || user.role === 'ADMIN') && !allowedOperations) {
         try {
-            const permission = await DatasetService.hasPermission(ctx.params.dataset, user);
+            const permission = await DatasetService.hasPermission(application, ctx.params.dataset, user);
             if (!permission) {
                 ctx.throw(403, 'Forbidden');
                 return;

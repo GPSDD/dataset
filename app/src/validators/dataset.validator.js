@@ -9,7 +9,7 @@ const cronParser = require('cron-parser');
 class DatasetValidator {
 
     static getUser(ctx) {
-        return JSON.parse(ctx.headers.USER_KEY);
+        return JSON.parse(ctx.headers.user_key);
     }
 
     static isString(property) {
@@ -242,7 +242,7 @@ class DatasetValidator {
         logger.info('Validating Dataset Raw Upload');
         koaObj.checkFile('dataset').notEmpty();
         koaObj.checkBody('provider').in(CONNECTOR_TYPES.document.provider.concat(RASDAMAN_TYPES));
-        const user = JSON.parse(koaObj.headers.USER_KEY);
+        const user = JSON.parse(koaObj.headers.user_key);
         if (user.role === 'USER') {
             koaObj.checkFile('dataset').size(0, 4 * 1024 * 1024, 'file too large');
         }

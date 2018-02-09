@@ -253,7 +253,7 @@ class DatasetService {
         return newDataset;
     }
 
-    static async updateEnv(datasetId, env) {
+    static async updateEnv(application, datasetId, env) {
         logger.debug('Updating env of all resources of dataset', datasetId, 'with env ', env);
         try {
             logger.debug('Updating widgets');
@@ -371,7 +371,7 @@ class DatasetService {
         return newDataset;
     }
 
-    static async deleteWidgets(datasetId) {
+    static async deleteWidgets(application, datasetId) {
         logger.info('Deleting widgets of dataset', datasetId);
         await ctRegisterMicroservice.requestToMicroservice({
             uri: `/dataset/${datasetId}/widget`,
@@ -380,7 +380,7 @@ class DatasetService {
         });
     }
 
-    static async deleteLayers(datasetId) {
+    static async deleteLayers(application, datasetId) {
         logger.info('Deleting layers of dataset', datasetId);
         await ctRegisterMicroservice.requestToMicroservice({
             uri: `/dataset/${datasetId}/layer`,
@@ -389,7 +389,7 @@ class DatasetService {
         });
     }
 
-    static async deleteMetadata(datasetId) {
+    static async deleteMetadata(application, datasetId) {
         logger.info('Deleting layers of dataset', datasetId);
         await ctRegisterMicroservice.requestToMicroservice({
             uri: `/dataset/${datasetId}/metadata`,
@@ -398,7 +398,7 @@ class DatasetService {
         });
     }
 
-    static async checkSecureDeleteResources(id) {
+    static async checkSecureDeleteResources(application, id) {
         logger.info('Checking if it is secure delete the resources(layer, widget) of the dataset');
         try {
             const layers = await ctRegisterMicroservice.requestToMicroservice({
@@ -431,7 +431,7 @@ class DatasetService {
         }
     }
 
-    static async delete(id, user) {
+    static async delete(application, id) {
         logger.debug(`[DatasetService]: Getting dataset with id:  ${id}`);
         logger.info(`[DBACCESS-FIND]: dataset.id: ${id}`);
         const currentDataset = await Dataset.findById(id).exec() || await Dataset.findOne({
@@ -445,7 +445,7 @@ class DatasetService {
             logger.error(`[DatasetService]: Dataset with id ${id} is protected`);
             throw new DatasetProtected(`Dataset is protected`);
         }
-        await DatasetService.checkSecureDeleteResources(id);
+        await DatasetService.checkSecureDeleteResources(application, id);
 
         logger.info(`[DBACCESS-DELETE]: dataset.id: ${id}`);
         if (currentDataset.connectorType === 'document') {
@@ -463,28 +463,28 @@ class DatasetService {
         }
         logger.debug('[DatasetService]: Deleting in graph');
         try {
-            await GraphService.deleteDataset(id);
+            await GraphService.deleteDataset(application, id);
         } catch (err) {
             logger.error('Error removing dataset of the graph', err);
         }
 
         logger.debug('[DatasetService]: Deleting layers');
         try {
-            await DatasetService.deleteLayers(id);
+            await DatasetService.deleteLayers(application, id);
         } catch (err) {
             logger.error('Error removing layers of the dataset', err);
         }
 
         logger.debug('[DatasetService]: Deleting widgets');
         try {
-            await DatasetService.deleteWidgets(id);
+            await DatasetService.deleteWidgets(application, id);
         } catch (err) {
             logger.error('Error removing widgets', err);
         }
 
         logger.debug('[DatasetService]: Deleting metadata');
         try {
-            await DatasetService.deleteMetadata(id);
+            await DatasetService.deleteMetadata(application, id);
         } catch (err) {
             logger.error('Error removing metadata', err);
         }
@@ -564,9 +564,9 @@ class DatasetService {
         return createdDataset;
     }
 
-    static async hasPermission(id, user) {
+    static async hasPermission(application, id, user) {
         let permission = true;
-        const dataset = await DatasetService.get(id);
+        const dataset = await DatasetService.get(application, id);
         const appPermission = user.extraUserData.apps.indexOf(dataset.application) > -1;
         if (!appPermission) {
             permission = false;
