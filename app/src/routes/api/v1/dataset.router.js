@@ -74,6 +74,7 @@ class DatasetRouter {
 
     static async get(ctx) {
         const id = ctx.params.dataset;
+        logger.debug(ctx.headers);
         logger.info(`[DatasetRouter] Getting dataset with id: ${id}`);
         const application = DatasetRouter.getApplication(ctx);
         const query = ctx.query;

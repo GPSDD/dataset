@@ -154,8 +154,9 @@ class DatasetService {
     static async get(application, id, query = {}) {
         logger.debug(`[DatasetService]: Getting dataset with id:  ${id}`);
         logger.info(`[DBACCESS-FIND]: dataset.id: ${id}`);
-        let dataset = await Dataset.findById(id).exec() || await Dataset.findOne({
-            slug: id
+        let dataset = await Dataset.findOne({_id: id, application}).exec() || await Dataset.findOne({
+            slug: id,
+            application
         }).exec();
         const includes = query.includes ? query.includes.split(',').map(elem => elem.trim()) : [];
         if (!dataset) {
@@ -496,6 +497,7 @@ class DatasetService {
     static async getAll(application, query = {}) {
         logger.debug(`[DatasetService]: Getting all datasets`);
         const sort = query.sort || '';
+        query.application = application;
         const page = query['page[number]'] ? parseInt(query['page[number]'], 10) : 1;
         const limit = query['page[size]'] ? parseInt(query['page[size]'], 10) : 10;
         const ids = query.ids ? query.ids.split(',').map(elem => elem.trim()) : [];
