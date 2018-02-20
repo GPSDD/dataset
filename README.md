@@ -50,11 +50,44 @@
 ## Dataset Endpoints
 
 GET: /v1/dataset
+
 POST: /v1/dataset
+
 GET: /v1/dataset/:dataset
+
 PATCH: /v1/dataset/:dataset
+
 DELETE: /v1/dataset/:dataset
+
 POST: /v1/dataset/find-by-ids
+
 POST: /v1/dataset/upload
-GET: /v1/dataset/:dataset/verification
+
 GET: /v1/dataset/:dataset/clone
+
+## Swagger
+
+[Check out the swagger docs](https://editor.swagger.io/?url=https://raw.githubusercontent.com/GPSDD/dataset/develop/app/microservice/swagger.json)
+
+## Development Setup
+
+You will need:
+
+- Docker [Docker](https://www.docker.com/)
+- Docker Compose [Docker Compose](https://docs.docker.com/compose/)
+
+Once you have both technologies installed locally, run the following:
+
+`./dataset.sh develop`
+
+In order to emulate the production environment (API Gateway & Microservice pattern) you will need to download the API Gateway and have it running locally.
+
+Check this out -> [Control Tower (API Gateway)](https://github.com/control-tower/control-tower)
+
+Or just run the following.
+
+`git clone https://github.com/control-tower/control-tower`
+
+`./controlTower.sh develop`
+
+If you want to make authenticated request, just grab a valid JWT Token from the Control Tower Github Repository. [Control Tower (API Gateway)](https://github.com/control-tower/control-tower)
