@@ -1,2 +1,441 @@
 {
+  "swagger": "2.0",
+  "info": {
+    "title": "GPSDD Dataset Microservice",
+    "description": "Dataset Microservice",
+    "license": {
+      "name": "The MIT License (MIT)",
+      "url": "https://github.com/GPSDD/dataset/blob/master/LICENSE"
+    },
+    "version": "1.0.0"
+  },
+  "host": "apihighways.data4sdgs.org",
+  "schemes": [
+    "https",
+    "http"
+  ],
+  "consumes": [
+    "application/vnd.api+json"
+  ],
+  "produces": [
+    "application/vnd.api+json"
+  ],
+  "securityDefinitions": {
+    "UserSecurity": {
+      "type": "apiKey",
+      "in": "header",
+      "name": "Authorization",
+      "description": "JWT AUTH ```Bearer {{TOKEN}}```"
+    }
+  },
+  "paths": {
+    "/v1/dataset": {
+      "get": {
+        "description": "Get all datasets",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "Datasets obtained",
+            "schema": {
+              "$ref": "#/definitions/Datasets"
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        }
+      },
+      "post": {
+        "description": "Create a new ataset",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/Dataset"
+            }
+          }
+        ],
+        "security": [
+          {
+            "UserSecurity": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Dataset created",
+            "schema": {
+              "$ref": "#/definitions/Dataset"
+            }
+          },
+          "400": {
+            "description": "Bad request. Invalid Params. See details",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        }
+      }
+    },
+    "/v1/dataset/{dataset}": {
+      "get": {
+        "description": "Get a dataset by slug or id",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "dataset",
+            "in": "path",
+            "description": "dataset id or slug",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Dataset object",
+            "schema": {
+              "$ref": "#/definitions/Dataset"
+            }
+          },
+          "404": {
+            "description": "DatasetNotFound error",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        }
+      },
+      "patch": {
+        "description": "Update a dataset",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "dataset",
+            "in": "path",
+            "description": "Dataset id or slug",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/Dataset"
+            }
+          }
+        ],
+        "security": [
+          {
+            "UserSecurity": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Dataset updated",
+            "schema": {
+              "$ref": "#/definitions/Dataset"
+            }
+          },
+          "400": {
+            "description": "Invalid properties",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          },
+          "403": {
+            "description": "NotAllowed error",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          },
+          "404": {
+            "description": "DatasetNotFound error",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        }
+      },
+      "delete": {
+        "description": "Delete a dataset",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "dataset",
+            "in": "path",
+            "description": "Dataset id or slug",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "security": [
+          {
+            "UserSecurity": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Dataset deleted",
+            "schema": {
+              "$ref": "#/definitions/Dataset"
+            }
+          },
+          "404": {
+            "description": "DatasetNotFound error",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        }
+      }
+    },
+    "/v1/dataset/find-by-ids": {
+      "post": {
+        "description": "Get a list of dataset by slug their ids",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "ids",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Datasets list",
+            "schema": {
+              "$ref": "#/definitions/Datasets"
+            }
+          },
+          "404": {
+            "description": "DatasetNotFound error",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        }
+      }
+    },
+    "/v1/dataset/upload": {
+      "post": {
+        "description": "Upload dataset blobs to S3",
+        "consumes": [
+          "multipart/form-data"
+        ],
+        "produces": [
+          "application/vnd.api+json",
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "dataset",
+            "in": "formData",
+            "description": "The uploaded file data",
+            "required": true,
+            "type": "file"
+          }
+        ],
+        "security": [
+          {
+            "UserSecurity": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Temporary valid Connector URL",
+            "schema": {
+              "type": "string"
+            }
+          },
+          "400": {
+            "description": "InvalidFile error",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        }
+      }
+    }
+  },
+  "definitions": {
+    "Error": {
+      "type": "object",
+      "description": "Error",
+      "properties": {
+        "status": {
+          "type": "string",
+          "description": "HTTP Status code"
+        },
+        "detail": {
+          "type": "string",
+          "description": "Short detail about the error"
+        }
+      }
+    },
+    "Dataset": {
+      "type": "object",
+      "description": "Dataset Model",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "dataset id"
+        },
+        "name": {
+          "type": "string",
+          "description": "dataset name"
+        },
+        "slug": {
+          "type": "string",
+          "description": "dataset slug"
+        },
+        "type": {
+          "type": "string",
+          "description": "dataset type"
+        },
+        "dataPath": {
+          "type": "string",
+          "description": "datapath"
+        },
+        "attributesPath": {
+          "type": "string",
+          "description": "attributespath"
+        },
+        "connectorType": {
+          "type": "string",
+          "description": "connectortype"
+        },
+        "provider": {
+          "type": "string",
+          "description": "provider"
+        },
+        "userId": {
+          "type": "string",
+          "description": "user id"
+        },
+        "tableName": {
+          "type": "string",
+          "description": "tableName"
+        },
+        "status": {
+          "type": "string",
+          "description": "status"
+        },
+        "overwrite": {
+          "type": "boolean",
+          "description": "overwrite"
+        },
+        "verified": {
+          "type": "boolean",
+          "description": "verified"
+        },
+        "errorMessage": {
+          "type": "string",
+          "description": "errorMessage"
+        },
+        "published": {
+          "type": "boolean",
+          "description": "published"
+        },
+        "sandbox": {
+          "type": "boolean",
+          "description": "sandbox"
+        },
+        "env": {
+          "type": "string",
+          "description": "enviornment"
+        },
+        "geoInfo": {
+          "type": "boolean",
+          "description": "geoInfo"
+        },
+        "protected": {
+          "type": "boolean",
+          "description": "protected"
+        },
+        "taskId": {
+          "type": "string",
+          "description": "taskId"
+        },
+        "subscribable": {
+          "type": "object",
+          "description": "subscribable"
+        },
+        "blockchain": {
+          "type": "object",
+          "description": "blockchain"
+        },
+        "legend": {
+          "type": "object",
+          "description": "legend"
+        },
+        "clonedHost": {
+          "type": "object",
+          "description": "clonedHost"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date",
+          "description": "creation date"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date",
+          "description": "update date"
+        }
+      }
+    },
+    "Datasets": {
+      "type": "object",
+      "properties": {
+        "data": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Dataset"
+          }
+        }
+      }
+    }
+  }
 }

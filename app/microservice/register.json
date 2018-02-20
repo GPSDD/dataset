@@ -1,11 +1,12 @@
 {
-	"name": "#(service.name)",
+	"name": "Dataset microservice",
 	"tags": ["dataset"],
 	"cache": ["dataset"],
 	"uncache": ["dataset"],
 	"endpoints": [{
 		"path": "/v1/dataset",
 		"method": "GET",
+		"authenticated": true,
 		"redirect": {
 			"method": "GET",
 			"path": "/api/v1/dataset"
@@ -13,7 +14,7 @@
 	},{
 		"path": "/v1/dataset/find-by-ids",
 		"method": "POST",
-		"invalidateCache": ["/dataset*"],
+		"authenticated": true,
 		"redirect": {
 			"method": "POST",
 			"path": "/api/v1/dataset/find-by-ids"
@@ -21,7 +22,6 @@
 	},{
 		"path": "/v1/dataset",
 		"method": "POST",
-		"invalidateCache": ["/dataset*"],
 		"authenticated": true,
 		"redirect": {
 			"method": "POST",
@@ -30,6 +30,7 @@
 	},{
 		"path": "/v1/dataset/:dataset",
 		"method": "GET",
+		"authenticated": true,
 		"redirect": {
 			"method": "GET",
 			"path": "/api/v1/dataset/:dataset"
@@ -37,7 +38,6 @@
 	},{
 		"path": "/v1/dataset/:dataset",
 		"method": "PATCH",
-		"invalidateCache": ["/dataset*"],
 		"authenticated": true,
 		"redirect": {
 			"method": "PATCH",
@@ -46,7 +46,6 @@
 	},{
 		"path": "/v1/dataset/:dataset",
 		"method": "DELETE",
-		"invalidateCache": ["/dataset*"],
 		"authenticated": true,
 		"redirect": {
 			"method": "DELETE",

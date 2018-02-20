@@ -9,8 +9,6 @@ class DatasetSerializer {
                 name: el.name,
                 slug: el.slug,
                 type: el.type,
-                subtitle: el.subtitle,
-                application: el.application,
                 dataPath: el.dataPath,
                 attributesPath: el.attributesPath,
                 connectorType: el.connectorType,
@@ -20,6 +18,7 @@ class DatasetSerializer {
                 tableName: el.tableName,
                 status: el.status,
                 published: el.published,
+                sandbox: el.sandbox,
                 overwrite: el.overwrite,
                 verified: el.verified,
                 blockchain: el.blockchain,
@@ -34,12 +33,8 @@ class DatasetSerializer {
                 createdAt: el.createdAt,
                 updatedAt: el.updatedAt,
                 metadata: el.metadata,
-                widget: el.widget,
-                layer: el.layer,
                 vocabulary: el.vocabulary,
-                user: el.user,
-                widgetRelevantProps: el.widgetRelevantProps,
-                layerRelevantProps: el.layerRelevantProps
+                user: el.user
             }
         };
     }
