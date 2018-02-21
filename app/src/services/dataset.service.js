@@ -183,6 +183,7 @@ class DatasetService {
             tableName: DatasetService.getTableName(dataset),
             overwrite: dataset.overwrite || dataset.dataOverwrite,
             status: dataset.connectorType === 'wms' ? 'saved' : 'pending',
+            sandbox: dataset.sandbox,
             published: user.role === 'ADMIN' ? dataset.published : false,
             subscribable: dataset.subscribable,
             protected: dataset.protected,
@@ -294,6 +295,7 @@ class DatasetService {
         currentDataset.tableName = tableName || currentDataset.tableName;
         currentDataset.type = dataset.type || currentDataset.type;
         currentDataset.env = dataset.env || currentDataset.env;
+        currentDataset.sandbox = dataset.sandbox || currentDataset.sandbox;
         if (dataset.geoInfo !== undefined) {
             currentDataset.geoInfo = dataset.geoInfo;
         }
