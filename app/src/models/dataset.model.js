@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 const mongoosePaginate = require('mongoose-paginate');
 const uuidV4 = require('uuid/v4');
+
 const Schema = mongoose.Schema;
 const STATUS = require('app.constants').STATUS;
 
@@ -9,10 +10,7 @@ const Dataset = new Schema({
     name: { type: String, required: true, trim: true },
     slug: { type: String, required: true, unique: true, trim: true },
     type: { type: String, required: false, trim: true, default: null },
-    subtitle: { type: String, required: false, trim: true, default: null },
-    application: [
-        { type: String, required: true, trim: true }
-    ],
+    application: { type: String, required: true, trim: true, default: 'data4sdgs' },
     dataPath: { type: String, required: false, trim: true, default: null },
     attributesPath: { type: String, required: false, trim: true, default: null },
     connectorType: { type: String, required: true, trim: true },
@@ -25,11 +23,12 @@ const Dataset = new Schema({
     verified: { type: Boolean, required: false, default: false },
     errorMessage: { type: String, required: false, trim: true, default: null },
     published: { type: Boolean, required: true, default: true },
+    sandbox: { type: Boolean, required: true, default: false },
     env: { type: String, required: true, default: 'production', trim: true },
     geoInfo: { type: Boolean, required: true, default: false },
     protected: { type: Boolean, required: true, default: false },
     taskId: { type: String, required: false, trim: true, default: null },
-    subscribable: { type: Schema.Types.Mixed },
+    subscribable: { type: Schema.Types.Mixed, default: {} },
     blockchain: {
         _id: false,
         id: { type: String, required: false, trim: true },
@@ -54,8 +53,7 @@ const Dataset = new Schema({
         hostType: { type: String, required: false, trim: true },
         hostPath: { type: String, required: false, trim: true }
     },
-    widgetRelevantProps: [{ type: String, required: false, trim: true }],
-    layerRelevantProps: [{ type: String, required: false, trim: true }],
+    createdAt: { type: Date, default: Date.now },
     updatedAt: { type: Date, default: Date.now }
 });
 

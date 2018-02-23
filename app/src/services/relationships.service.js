@@ -2,7 +2,7 @@ const logger = require('logger');
 const ctRegisterMicroservice = require('ct-register-microservice-node');
 const INCLUDES = require('app.constants').INCLUDES;
 
-const serializeObjToQuery = (obj) => Object.keys(obj).reduce((a, k) => {
+const serializeObjToQuery = obj => Object.keys(obj).reduce((a, k) => {
     a.push(`${k}=${encodeURIComponent(obj[k])}`);
     return a;
 }, []).join('&');
@@ -10,9 +10,6 @@ const serializeObjToQuery = (obj) => Object.keys(obj).reduce((a, k) => {
 class RelationshipsService {
 
     static treatQuery(query) {
-        if (!query.application && query.app) {
-            query.application = query.app;
-        }
         delete query.includes;
         return query;
     }
@@ -27,12 +24,6 @@ class RelationshipsService {
                     ids
                 };
                 let version = true;
-                if (include === 'layer' || include === 'widget') {
-                    const apps = query.application || query.app;
-                    if (apps) {
-                        payload.app = apps;
-                    }
-                }
                 if (include === 'vocabulary' || include === 'metadata') {
                     uri = '/dataset';
                 }
@@ -209,14 +200,13 @@ class RelationshipsService {
         }
     }
 
-    static async getFavorites(app, userId) {
+    static async getFavorites(userId) {
         try {
             const result = await ctRegisterMicroservice.requestToMicroservice({
                 uri: `/favourite/find-by-user`,
                 method: 'POST',
                 json: true,
                 body: {
-                    app,
                     userId
                 }
             });
