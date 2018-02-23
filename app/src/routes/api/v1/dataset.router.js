@@ -1,4 +1,3 @@
-const fs = require('fs');
 const Router = require('koa-router');
 const koaMulter = require('koa-multer');
 const logger = require('logger');
@@ -201,8 +200,7 @@ class DatasetRouter {
                 ctx.throw(403, 'Fav filter not authorized');
                 return;
             }
-            const app = ctx.query.app || ctx.query.application || 'rw';
-            ctx.query.ids = await RelationshipsService.getFavorites(app, userId);
+            ctx.query.ids = await RelationshipsService.getFavorites(userId);
             ctx.query.ids = ctx.query.ids.length > 0 ? ctx.query.ids.join(',') : '';
             logger.debug('Ids from collections', ctx.query.ids);
         }
@@ -324,16 +322,6 @@ const authorizationMiddleware = async (ctx, next) => {
             return;
         }
     }
-    const application = ctx.request.query.application ? ctx.request.query.application : ctx.request.body.application;
-    if (application) {
-        const appPermission = application.find(app =>
-            user.extraUserData.apps.find(userApp => userApp === app)
-        );
-        if (!appPermission) {
-            ctx.throw(403, 'Forbidden'); // if manager or admin but no application -> out
-            return;
-        }
-    }
     const allowedOperations = newDatasetCreation || uploadDataset;
     if ((user.role === 'MANAGER' || user.role === 'ADMIN') && !allowedOperations) {
         try {
@@ -360,22 +348,10 @@ const authorizationBigQuery = async (ctx, next) => {
     await next();
 };
 
-const authorizationSubscribable = async (ctx, next) => {
-    logger.info(`[DatasetRouter] Checking if it can update the subscribable prop`);
-    if (ctx.request.body.subscribable) {
-        const user = DatasetRouter.getUser(ctx);
-        if (user.email !== 'sergio.gordillo@vizzuality.com' && user.email !== 'raul.requero@vizzuality.com' && user.email !== 'alicia.arenzana@vizzuality.com') {
-            ctx.throw(401, 'Unauthorized'); // if not logged or invalid ROLE -> out
-            return;
-        }
-    }
-    await next();
-};
 
 router.get('/', DatasetRouter.getAll);
 router.post('/find-by-ids', DatasetRouter.findByIds);
 router.post('/', validationMiddleware, authorizationMiddleware, authorizationBigQuery, DatasetRouter.create);
-// router.post('/', validationMiddleware, authorizationMiddleware, authorizationBigQuery, authorizationSubscribable, DatasetRouter.create);
 router.post('/upload', validationMiddleware, authorizationMiddleware, DatasetRouter.upload);
 
 router.get('/:dataset', DatasetRouter.get);

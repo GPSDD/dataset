@@ -6,6 +6,7 @@ const config = require('config');
 const loader = require('loader');
 const ctRegisterMicroservice = require('ct-register-microservice-node');
 const ErrorSerializer = require('serializers/error.serializer');
+
 const mongoUri = process.env.MONGO_URI || `mongodb://${config.get('mongodb.host')}:${config.get('mongodb.port')}/${config.get('mongodb.database')}`;
 const koaValidate = require('koa-validate');
 
@@ -18,7 +19,7 @@ const koaBody = require('koa-body')({
 
 let dbOptions = {};
 // KUBE CLUSTER
-if (mongoUri.indexOf('replicaSet') > - 1) {
+if (mongoUri.indexOf('replicaSet') > -1) {
     dbOptions = {
         db: { native_parser: true },
         replset: {

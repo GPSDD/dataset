@@ -78,7 +78,6 @@ class DatasetValidator {
         const provider = koaObj.request.body.provider;
         const data = koaObj.request.body.data;
         const tableName = koaObj.request.body.tableName;
-
         // it is a document - json?
         if (connectorType === 'document' && provider === 'json') {
             // is it data valid?
@@ -154,11 +153,8 @@ class DatasetValidator {
         logger.info('Validating Dataset Creation');
         koaObj.checkBody('name').notEmpty().check(name => DatasetValidator.notEmptyString(name), 'can not be empty');
         koaObj.checkBody('type').optional().check(type => DatasetValidator.isString(type), 'must be a string');
-        koaObj.checkBody('subtitle').optional().check(subtitle => DatasetValidator.isString(subtitle), 'must be a string');
-        koaObj.checkBody('application').notEmpty().check(application => DatasetValidator.notEmptyArray(application), 'must be a non-empty array');
         koaObj.checkBody('dataPath').optional().check(dataPath => DatasetValidator.isString(dataPath), 'must be a string');
         koaObj.checkBody('attributesPath').optional().check(attributesPath => DatasetValidator.isString(attributesPath), 'must be a string');
-        // koaObj.checkBody('env').in(['production', 'preproduction']);
         // connectorType
         koaObj.checkBody('connectorType').notEmpty()
         .toLow()
@@ -171,6 +167,7 @@ class DatasetValidator {
         koaObj.checkBody('connectorUrl').check(connectorUrl => DatasetValidator.checkConnectorUrl(connectorUrl, koaObj), DatasetValidator.errorMessage('connectorUrl'));
         koaObj.checkBody('tableName').optional().check(tableName => DatasetValidator.isString(tableName), 'must be a string');
         koaObj.checkBody('published').optional().toBoolean();
+        koaObj.checkBody('sandbox').optional().toBoolean();
         koaObj.checkBody('overwrite').optional().toBoolean();
         koaObj.checkBody('verified').optional().toBoolean();
         koaObj.checkBody('dataOverwrite').optional().toBoolean();
@@ -197,8 +194,6 @@ class DatasetValidator {
         logger.info('Validating Dataset Update');
         koaObj.checkBody('name').optional().check(name => DatasetValidator.notEmptyString(name), 'can not be empty');
         koaObj.checkBody('type').optional().check(type => DatasetValidator.isString(type), 'must be a string');
-        koaObj.checkBody('subtitle').optional().check(subtitle => DatasetValidator.isString(subtitle), 'must be a string');
-        koaObj.checkBody('application').optional().check(application => DatasetValidator.notEmptyArray(application), 'must be a non-empty array');
         koaObj.checkBody('dataPath').optional().check(dataPath => DatasetValidator.isString(dataPath), 'must be a string');
         koaObj.checkBody('attributesPath').optional().check(attributesPath => DatasetValidator.isString(attributesPath), 'must be a string');
         koaObj.checkBody('connectorType').optional().check(connectorType => DatasetValidator.isString(connectorType), 'must be a string');
@@ -206,6 +201,7 @@ class DatasetValidator {
         koaObj.checkBody('connectorUrl').optional().check(connectorUrl => DatasetValidator.notEmptyString(connectorUrl), 'can not be empty');
         koaObj.checkBody('tableName').optional().check(tableName => DatasetValidator.isString(tableName), 'must be a string');
         koaObj.checkBody('published').optional().toBoolean();
+        koaObj.checkBody('sandbox').optional().toBoolean();
         koaObj.checkBody('overwrite').optional().toBoolean();
         koaObj.checkBody('verified').optional().toBoolean();
         koaObj.checkBody('dataOverwrite').optional().toBoolean();
@@ -233,7 +229,6 @@ class DatasetValidator {
 
     static async validateCloning(koaObj) {
         logger.info('Validating Dataset Cloning');
-        koaObj.checkBody('application').notEmpty().check(application => DatasetValidator.notEmptyArray(application), 'must be a non-empty array');
         koaObj.checkBody('datasetUrl').notEmpty().isAscii();
         if (koaObj.errors) {
             logger.error('Error validating dataset creation');
