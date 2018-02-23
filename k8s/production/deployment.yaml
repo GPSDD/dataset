@@ -2,8 +2,8 @@ apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
   labels:
-    name: {name}
-  name: {name}
+    name: dataset
+  name: dataset
 spec:
   revisionHistoryLimit: 2
   template:
@@ -11,11 +11,11 @@ spec:
       annotations:
         chaos.alpha.kubernetes.io/enabled: "true"
       labels:
-        name: {name}
+        name: dataset
     spec:
       containers:
-      - name: {name}
-        image: vizzuality/{name}
+      - name: dataset
+        image: vizzuality/dataset
         imagePullPolicy: Always
         resources:
           requests:
@@ -32,7 +32,7 @@ spec:
           - name: NODE_PATH
             value: app/src
           - name: LOCAL_URL
-            value: http://{name}.default.svc.cluster.local:3000
+            value: http://dataset.default.svc.cluster.local:3000
           - name: MONGO_URI
             valueFrom:
                 secretKeyRef:
@@ -68,21 +68,6 @@ spec:
                 secretKeyRef:
                   name: mssecrets
                   key: S3_SECRET_ACCESS_KEY
-          - name: NEWRELIC_LICENSE
-            valueFrom:
-                secretKeyRef:
-                  name: mssecrets
-                  key: NEWRELIC_LICENSE
-          - name: STAMPERY_TOKEN
-            valueFrom:
-                secretKeyRef:
-                  name: mssecrets
-                  key: STAMPERY_TOKEN
-          - name: REDIS_URL
-            valueFrom:
-                secretKeyRef:
-                  name: dbsecrets
-                  key: REDIS_URI
 
         ports:
           - containerPort: 3000
