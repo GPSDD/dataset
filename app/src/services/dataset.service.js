@@ -295,7 +295,6 @@ class DatasetService {
         currentDataset.tableName = tableName || currentDataset.tableName;
         currentDataset.type = dataset.type || currentDataset.type;
         currentDataset.env = dataset.env || currentDataset.env;
-        currentDataset.sandbox = dataset.sandbox || currentDataset.sandbox;
         if (dataset.geoInfo !== undefined) {
             currentDataset.geoInfo = dataset.geoInfo;
         }
@@ -312,6 +311,9 @@ class DatasetService {
         }
         if ((dataset.protected === false || dataset.protected === true)) {
             currentDataset.protected = dataset.protected;
+        }
+        if ((dataset.sandbox === false || dataset.sandbox === true)) {
+            currentDataset.sandbox = dataset.sandbox;
         }
         currentDataset.subscribable = dataset.subscribable || currentDataset.subscribable;
         currentDataset.legend = dataset.legend || currentDataset.legend;
