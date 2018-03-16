@@ -181,8 +181,6 @@ class DatasetValidator {
         koaObj.checkBody('legend').optional().check(legend => DatasetValidator.isObject(legend), 'must be an object');
         koaObj.checkBody('vocabularies').optional().check(vocabularies => DatasetValidator.isObject(vocabularies), 'must be an object');
         koaObj.checkBody('sync').optional().check(sync => DatasetValidator.checkSync(sync), 'not valid');
-        koaObj.checkBody('widgetRelevantProps').optional().check(widgetRelevantProps => DatasetValidator.isArray(widgetRelevantProps), 'must be an array');
-        koaObj.checkBody('layerRelevantProps').optional().check(layerRelevantProps => DatasetValidator.isArray(layerRelevantProps), 'must be an array');
         if (koaObj.errors) {
             logger.error('Error validating dataset creation');
             throw new DatasetNotValid(koaObj.errors);
@@ -218,8 +216,6 @@ class DatasetValidator {
         koaObj.checkBody('blockchain').optional().check(blockchain => DatasetValidator.isObject(blockchain));
         koaObj.checkBody('vocabularies').optional().check(vocabularies => DatasetValidator.isObject(vocabularies));
         koaObj.checkBody('sync').optional().check(sync => DatasetValidator.checkSync(sync), 'not valid');
-        koaObj.checkBody('widgetRelevantProps').optional().check(widgetRelevantProps => DatasetValidator.isArray(widgetRelevantProps), 'must be an array');
-        koaObj.checkBody('layerRelevantProps').optional().check(layerRelevantProps => DatasetValidator.isArray(layerRelevantProps), 'must be an array');
         if (koaObj.errors) {
             logger.error('Error validating dataset creation');
             throw new DatasetNotValid(koaObj.errors);
