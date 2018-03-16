@@ -189,9 +189,7 @@ class DatasetService {
             protected: dataset.protected,
             verified: dataset.verified,
             legend: dataset.legend,
-            clonedHost: dataset.clonedHost,
-            widgetRelevantProps: dataset.widgetRelevantProps,
-            layerRelevantProps: dataset.layerRelevantProps
+            clonedHost: dataset.clonedHost
         }).save();
         logger.debug('[DatasetService]: Creating in graph');
         if (stage !== 'staging') {
@@ -245,26 +243,6 @@ class DatasetService {
 
     static async updateEnv(datasetId, env) {
         logger.debug('Updating env of all resources of dataset', datasetId, 'with env ', env);
-        try {
-            logger.debug('Updating widgets');
-            await ctRegisterMicroservice.requestToMicroservice({
-                uri: `/widget/change-environment/${datasetId}/${env}`,
-                method: 'PATCH',
-                json: true
-            });
-        } catch (err) {
-            logger.error('Error updating widgets', err);
-        }
-        try {
-            logger.debug('Updating layers');
-            await ctRegisterMicroservice.requestToMicroservice({
-                uri: `/layer/change-environment/${datasetId}/${env}`,
-                method: 'PATCH',
-                json: true
-            });
-        } catch (err) {
-            logger.error('Error updating layers', err);
-        }
     }
 
     static async update(id, dataset, user) {
@@ -318,8 +296,6 @@ class DatasetService {
         currentDataset.subscribable = dataset.subscribable || currentDataset.subscribable;
         currentDataset.legend = dataset.legend || currentDataset.legend;
         currentDataset.clonedHost = dataset.clonedHost || currentDataset.clonedHost;
-        currentDataset.widgetRelevantProps = dataset.widgetRelevantProps || currentDataset.widgetRelevantProps;
-        currentDataset.layerRelevantProps = dataset.layerRelevantProps || currentDataset.layerRelevantProps;
         currentDataset.updatedAt = new Date();
         if (user.id === 'microservice' && (dataset.status === 0 || dataset.status === 1 || dataset.status === 2)) {
             if (dataset.status === 0) {
@@ -362,59 +338,12 @@ class DatasetService {
         return newDataset;
     }
 
-    static async deleteWidgets(datasetId) {
-        logger.info('Deleting widgets of dataset', datasetId);
-        await ctRegisterMicroservice.requestToMicroservice({
-            uri: `/dataset/${datasetId}/widget`,
-            method: 'DELETE'
-        });
-    }
-
-    static async deleteLayers(datasetId) {
-        logger.info('Deleting layers of dataset', datasetId);
-        await ctRegisterMicroservice.requestToMicroservice({
-            uri: `/dataset/${datasetId}/layer`,
-            method: 'DELETE'
-        });
-    }
-
     static async deleteMetadata(datasetId) {
-        logger.info('Deleting layers of dataset', datasetId);
+        logger.info('Deleting metadata of dataset', datasetId);
         await ctRegisterMicroservice.requestToMicroservice({
             uri: `/dataset/${datasetId}/metadata`,
             method: 'DELETE'
         });
-    }
-
-    static async checkSecureDeleteResources(id) {
-        logger.info('Checking if it is secure delete the resources(layer, widget) of the dataset');
-        try {
-            const layers = await ctRegisterMicroservice.requestToMicroservice({
-                uri: `/dataset/${id}/layer?protected=true`,
-                method: 'GET',
-                json: true
-            });
-            logger.debug(layers);
-            if (layers && layers.data.length > 0) {
-                throw new DatasetProtected('Exist protected layers associated to the dataset');
-            }
-        } catch (err) {
-            logger.error('Error obtaining protected layers of the dataset');
-            throw err;
-        }
-        try {
-            const widgets = await ctRegisterMicroservice.requestToMicroservice({
-                uri: `/dataset/${id}/widget?protected=true`,
-                method: 'GET',
-                json: true
-            });
-            if (widgets && widgets.data.length > 0) {
-                throw new DatasetProtected('Exist protected widgets associated to the dataset');
-            }
-        } catch (err) {
-            logger.error('Error obtaining protected widgets of the dataset');
-            throw err;
-        }
     }
 
     static async delete(id, user) {
@@ -431,7 +360,6 @@ class DatasetService {
             logger.error(`[DatasetService]: Dataset with id ${id} is protected`);
             throw new DatasetProtected(`Dataset is protected`);
         }
-        await DatasetService.checkSecureDeleteResources(id);
         logger.info(`[DBACCESS-DELETE]: dataset.id: ${id}`);
         if (currentDataset.connectorType === 'document') {
             try {
@@ -451,21 +379,6 @@ class DatasetService {
         } catch (err) {
             logger.error('Error removing dataset of the graph', err);
         }
-
-        logger.debug('[DatasetService]: Deleting layers');
-        try {
-            await DatasetService.deleteLayers(id);
-        } catch (err) {
-            logger.error('Error removing layers of the dataset', err);
-        }
-
-        logger.debug('[DatasetService]: Deleting widgets');
-        try {
-            await DatasetService.deleteWidgets(id);
-        } catch (err) {
-            logger.error('Error removing widgets', err);
-        }
-
         logger.debug('[DatasetService]: Deleting metadata');
         try {
             await DatasetService.deleteMetadata(id);
@@ -535,7 +448,7 @@ class DatasetService {
             try {
                 await GraphService.createDataset(newDataset._id);
             } catch (err) {
-                logger.error('Error creating widget in graph. Removing widget');
+                logger.error('Error creating dataset in graph. Removing dataset');
                 await createdDataset.remove();
                 throw new Error(err);
             }
