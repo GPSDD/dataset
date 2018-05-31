@@ -28,7 +28,7 @@ class FileDataService {
             const params = {
                 localFile: filePath,
                 s3Params: {
-                    Bucket: 'wri-api-backups',
+                    Bucket: 'apihighways',
                     Key: key,
                     ACL: 'public-read'
                 }
@@ -51,8 +51,8 @@ class FileDataService {
             const name = fileName.split('/')[1];
 
             const params = {
-                Bucket: 'wri-api-backups',
-                CopySource: `wri-api-backups/temp/${name}`,
+                Bucket: 'apihighways',
+                CopySource: `apihighways/temp/${name}`,
                 Key: `raw/${name}`,
                 ACL: 'public-read'
             };

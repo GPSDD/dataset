@@ -37,7 +37,7 @@ class DatasetRouter {
         return user;
     }
 
-    static notifyAdapter(ctx, dataset) {
+    static notifyAdapter(ctx, dataset, userId) {
         const connectorType = dataset.connectorType;
         const provider = dataset.provider;
         const clonedDataset = Object.assign({}, dataset.toObject());
@@ -69,7 +69,7 @@ class DatasetRouter {
             uri,
             method,
             json: true,
-            body: { connector: clonedDataset }
+            body: { connector: clonedDataset, userId }
         });
     }
 
@@ -96,7 +96,7 @@ class DatasetRouter {
             const user = DatasetRouter.getUser(ctx);
             const dataset = await DatasetService.create(ctx.request.body, user);
             try {
-                DatasetRouter.notifyAdapter(ctx, dataset);
+                DatasetRouter.notifyAdapter(ctx, dataset, user.id);
             } catch (error) {
                 // do nothing
             }
@@ -341,7 +341,7 @@ const authorizationBigQuery = async (ctx, next) => {
     logger.info(`[DatasetRouter] Checking if bigquery dataset`);
     // Get user from query (delete) or body (post-patch)
     const user = DatasetRouter.getUser(ctx);
-    if (ctx.request.body.provider === 'bigquery' && (user.email !== 'sergio.gordillo@vizzuality.com' && user.email !== 'raul.requero@vizzuality.com' && user.email !== 'alicia.arenzana@vizzuality.com')) {
+    if (ctx.request.body.provider === 'bigquery' && (user.email !== 'sergio.gordillo@vizzuality.com' && user.email !== 'raul.requero@vizzuality.com' && user.email !== 'alicia.arenzana@vizzuality.com' && user.email !== 'enrique.cornejo@vizzuality.com')) {
         ctx.throw(401, 'Unauthorized'); // if not logged or invalid ROLE -> out
         return;
     }
