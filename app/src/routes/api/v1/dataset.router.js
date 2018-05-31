@@ -37,7 +37,7 @@ class DatasetRouter {
         return user;
     }
 
-    static notifyAdapter(ctx, dataset) {
+    static notifyAdapter(ctx, dataset, userId) {
         const connectorType = dataset.connectorType;
         const provider = dataset.provider;
         const clonedDataset = Object.assign({}, dataset.toObject());
@@ -69,7 +69,7 @@ class DatasetRouter {
             uri,
             method,
             json: true,
-            body: { connector: clonedDataset }
+            body: { connector: clonedDataset, userId }
         });
     }
 
@@ -96,7 +96,7 @@ class DatasetRouter {
             const user = DatasetRouter.getUser(ctx);
             const dataset = await DatasetService.create(ctx.request.body, user);
             try {
-                DatasetRouter.notifyAdapter(ctx, dataset);
+                DatasetRouter.notifyAdapter(ctx, dataset, user.id);
             } catch (error) {
                 // do nothing
             }
