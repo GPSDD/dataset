@@ -5,8 +5,8 @@
   "repository": "https://github.com/GPSDD/dataset",
   "main": "index.js",
   "scripts": {
-    "test": "NODE_PATH=app/src node ./node_modules/.bin/grunt --gruntfile app/Gruntfile.js e2eTest",
-    "start": "NODE_PATH=app/src node app/index.js"
+    "test": "NODE_PATH=app/src node $NODE_DEBUG_OPTION ./node_modules/.bin/grunt --gruntfile app/Gruntfile.js e2eTest",
+    "start": "NODE_PATH=app/src node $NODE_DEBUG_OPTION app/index.js"
   },
   "keywords": [
     "dataset",
