@@ -13,17 +13,11 @@ class DatasetValidator {
     }
 
     static isString(property) {
-        if (typeof property === 'string' && property.length >= 0) {
-            return true;
-        }
-        return false;
+        return (typeof property === 'string' && property.length >= 0);
     }
 
     static notEmptyString(property) {
-        if (typeof property === 'string' && property.length > 0) {
-            return true;
-        }
-        return false;
+        return (typeof property === 'string' && property.length > 0);
     }
 
     static validUrl(property) {
@@ -38,38 +32,23 @@ class DatasetValidator {
     }
 
     static isArray(property) {
-        if (property instanceof Array) {
-            return true;
-        }
-        return false;
+        return (property instanceof Array);
     }
 
     static notEmptyArray(property) {
-        if (property instanceof Array && property.length > 0) {
-            return true;
-        }
-        return false;
+        return (property instanceof Array && property.length > 0);
     }
 
     static isObject(property) {
-        if (property instanceof Object && property.length === undefined) {
-            return true;
-        }
-        return false;
+        return (property instanceof Object && property.length === undefined);
     }
 
     static checkConnectorType(connectorType) {
-        if (Object.keys(CONNECTOR_TYPES).indexOf(connectorType) >= 0) {
-            return true;
-        }
-        return false;
+        return (Object.keys(CONNECTOR_TYPES).indexOf(connectorType) >= 0);
     }
 
     static checkProvider(provider, koaObj = {}) {
-        if (Object.keys(CONNECTOR_TYPES).indexOf(koaObj.request.body.connectorType) >= 0 && CONNECTOR_TYPES[koaObj.request.body.connectorType].provider.indexOf(provider) >= 0) {
-            return true;
-        }
-        return false;
+        return (Object.keys(CONNECTOR_TYPES).indexOf(koaObj.request.body.connectorType) >= 0 && CONNECTOR_TYPES[koaObj.request.body.connectorType].provider.indexOf(provider) >= 0);
     }
 
     static checkConnectorUrl(connectorUrl, koaObj) {
@@ -78,34 +57,27 @@ class DatasetValidator {
         const provider = koaObj.request.body.provider;
         const data = koaObj.request.body.data;
         const tableName = koaObj.request.body.tableName;
+
+        const connectorWithTableName = ['gee', 'bigquery', 'nexgddp', 'worldbank', 'resourcewatch'];
+
         // it is a document - json?
         if (connectorType === 'document' && provider === 'json') {
             // is it data valid?
             if (DatasetValidator.isArray(data) || DatasetValidator.isObject(data)) {
                 validation = true;
-            // if data is not provided, check if url is valid
+                // if data is not provided, check if url is valid
             } else {
-                if (DatasetValidator.validUrl(connectorUrl) || connectorUrl.indexOf('rw.dataset.raw') >= 0) {
-                    validation = true;
-                } else {
-                    validation = false;
-                }
+                validation = (DatasetValidator.validUrl(connectorUrl) || connectorUrl.indexOf('rw.dataset.raw') >= 0);
             }
-        // is it a gee or bigquery dataset?
-        } else if (connectorType === 'rest' && (provider === 'gee' || provider === 'bigquery' || provider === 'nexgddp' || provider === 'worldbank')) {
+            // is it a gee or bigquery dataset?
+        } else if (connectorType === 'rest' && connectorWithTableName.includes(provider)) {
             // is it tableName valid?
-            if (DatasetValidator.notEmptyString(tableName)) {
-                validation = true;
-            // if tableName not provided
-            } else {
-                validation = false;
-            }
-        // in other cases just validate url
-        } else {
-            if (connectorUrl && (DatasetValidator.validUrl(connectorUrl) || connectorUrl.indexOf('rw.dataset.raw') >= 0)) {
-                validation = true;
-            }
+            validation = (DatasetValidator.notEmptyString(tableName));
+            // in other cases just validate url
+        } else if (connectorUrl && (DatasetValidator.validUrl(connectorUrl) || connectorUrl.indexOf('rw.dataset.raw') >= 0)) {
+            validation = true;
         }
+
         return validation;
     }
 
@@ -113,10 +85,7 @@ class DatasetValidator {
         if (DatasetValidator.isObject(sync)) {
             try {
                 cronParser.parseExpression(sync.cronPattern);
-                if (['concat', 'overwrite'].indexOf(sync.action) >= 0 && DatasetValidator.validUrl(sync.url)) {
-                    return true;
-                }
-                return false;
+                return (['concat', 'overwrite'].indexOf(sync.action) >= 0 && DatasetValidator.validUrl(sync.url));
             } catch (err) {
                 return false;
             }
@@ -157,12 +126,12 @@ class DatasetValidator {
         koaObj.checkBody('attributesPath').optional().check(attributesPath => DatasetValidator.isString(attributesPath), 'must be a string');
         // connectorType
         koaObj.checkBody('connectorType').notEmpty()
-        .toLow()
-        .check(connectorType => DatasetValidator.checkConnectorType(connectorType), DatasetValidator.errorMessage('connectorType'));
+            .toLow()
+            .check(connectorType => DatasetValidator.checkConnectorType(connectorType), DatasetValidator.errorMessage('connectorType'));
         // provider
         koaObj.checkBody('provider').notEmpty()
-        .toLow()
-        .check(provider => DatasetValidator.checkProvider(provider, koaObj), DatasetValidator.errorMessage('provider', koaObj));
+            .toLow()
+            .check(provider => DatasetValidator.checkProvider(provider, koaObj), DatasetValidator.errorMessage('provider', koaObj));
         // connectorUrl
         koaObj.checkBody('connectorUrl').check(connectorUrl => DatasetValidator.checkConnectorUrl(connectorUrl, koaObj), DatasetValidator.errorMessage('connectorUrl'));
         koaObj.checkBody('tableName').optional().check(tableName => DatasetValidator.isString(tableName), 'must be a string');
@@ -171,12 +140,9 @@ class DatasetValidator {
         koaObj.checkBody('overwrite').optional().toBoolean();
         koaObj.checkBody('verified').optional().toBoolean();
         koaObj.checkBody('dataOverwrite').optional().toBoolean();
-        koaObj.checkBody('data').optional().check(data => {
-            if (DatasetValidator.isArray(data) || DatasetValidator.isObject(data)) {
-                return true;
-            }
-            return false;
-        }, 'must be a valid JSON');
+        koaObj.checkBody('data').optional().check(data => (DatasetValidator.isArray(data) || DatasetValidator.isObject(data)),
+            'must be a valid JSON'
+        );
         koaObj.checkBody('subscribable').optional().check(subscribable => DatasetValidator.isObject(subscribable), 'must be an object');
         koaObj.checkBody('legend').optional().check(legend => DatasetValidator.isObject(legend), 'must be an object');
         koaObj.checkBody('vocabularies').optional().check(vocabularies => DatasetValidator.isObject(vocabularies), 'must be an object');
@@ -205,12 +171,8 @@ class DatasetValidator {
         koaObj.checkBody('dataOverwrite').optional().toBoolean();
         koaObj.checkBody('errorMessage').optional().check(errorMessage => DatasetValidator.isString(errorMessage), 'must be a string');
         koaObj.checkBody('taskId').optional().check(taskId => DatasetValidator.isString(taskId), 'must be a string');
-        koaObj.checkBody('data').optional().check(data => {
-            if (DatasetValidator.isArray(data) || DatasetValidator.isObject(data)) {
-                return true;
-            }
-            return false;
-        }, 'must be a valid JSON');
+        koaObj.checkBody('data').optional().check(data => (DatasetValidator.isArray(data) || DatasetValidator.isObject(data))
+            , 'must be a valid JSON');
         koaObj.checkBody('subscribable').optional().check(subscribable => DatasetValidator.isObject(subscribable), 'must be an object');
         koaObj.checkBody('legend').optional().check(legend => DatasetValidator.isObject(legend));
         koaObj.checkBody('blockchain').optional().check(blockchain => DatasetValidator.isObject(blockchain));
