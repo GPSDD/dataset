@@ -175,6 +175,8 @@ class DatasetService {
             dataPath: dataset.dataPath,
             attributesPath: dataset.attributesPath,
             connectorType: dataset.connectorType,
+            sourceApplication: dataset.sourceApplication,
+            sourceLanguage: dataset.sourceLanguage,
             provider: dataset.provider,
             userId: user.id,
             env: dataset.env || 'production',
