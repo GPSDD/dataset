@@ -86,6 +86,39 @@ describe('E2E test', () => {
         requester = chai.request(server).keepOpen();
     });
 
+    it('Create a Generic Index Dataset', async () => {
+        let response = null;
+        const timestamp = new Date().getTime();
+        const dataset = {
+            name: `Generic Index Dataset - ${timestamp}`,
+            connectorType: 'rest',
+            provider: 'genericindex'
+        };
+        let createdDataset = null;
+        try {
+            response = await requester
+                .post(`/api/v1/dataset`)
+                .send({
+                    dataset,
+                    loggedUser: ROLES.ADMIN
+                });
+            createdDataset = deserializeDataset(response);
+            referencedDataset = response.body.data;
+        } catch (e) {
+            logger.error(e);
+        }
+        response.status.should.equal(200);
+        response.body.should.have.property('data').and.be.a.Object();
+        createdDataset.should.have.property('name').and.be.exactly(`Generic Index Dataset - ${timestamp}`);
+        createdDataset.should.have.property('connectorType').and.be.exactly('rest');
+        createdDataset.should.have.property('provider').and.be.exactly('genericindex');
+        createdDataset.should.have.property('userId').and.be.exactly(ROLES.ADMIN.id);
+        createdDataset.should.have.property('status').and.be.exactly('saved');
+        createdDataset.should.have.property('overwrite').and.be.exactly(false);
+        createdDataset.legend.should.be.an.instanceOf(Object);
+        createdDataset.clonedHost.should.be.an.instanceOf(Object);
+    });
+
     /* Create a Carto Dataset */
     it('Create a CARTO DB dataset', async () => {
         let response = null;
