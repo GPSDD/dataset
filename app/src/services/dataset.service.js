@@ -184,7 +184,7 @@ class DatasetService {
             connectorUrl: dataset.connectorUrl,
             tableName: DatasetService.getTableName(dataset),
             overwrite: dataset.overwrite || dataset.dataOverwrite,
-            status: dataset.connectorType === 'wms' ? 'saved' : 'pending',
+            status: (dataset.connectorType === 'wms' || dataset.provider === 'genericindex') ? 'saved' : 'pending',
             sandbox: dataset.sandbox,
             published: user.role === 'ADMIN' ? dataset.published : false,
             subscribable: dataset.subscribable,

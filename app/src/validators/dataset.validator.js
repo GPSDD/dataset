@@ -48,7 +48,10 @@ class DatasetValidator {
     }
 
     static checkProvider(provider, koaObj = {}) {
-        return (Object.keys(CONNECTOR_TYPES).indexOf(koaObj.request.body.connectorType) >= 0 && CONNECTOR_TYPES[koaObj.request.body.connectorType].provider.indexOf(provider) >= 0);
+        return (
+            Object.keys(CONNECTOR_TYPES).indexOf(koaObj.request.body.connectorType) >= 0 &&
+            CONNECTOR_TYPES[koaObj.request.body.connectorType].provider.indexOf(provider) >= 0
+        );
     }
 
     static checkConnectorUrl(connectorUrl, koaObj) {
@@ -59,6 +62,8 @@ class DatasetValidator {
         const tableName = koaObj.request.body.tableName;
 
         const connectorWithTableName = ['gee', 'bigquery', 'nexgddp', 'worldbank', 'resourcewatch'];
+
+        if (provider === 'genericindex') return true;
 
         // it is a document - json?
         if (connectorType === 'document' && provider === 'json') {
