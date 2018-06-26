@@ -61,7 +61,7 @@ class DatasetValidator {
         const data = koaObj.request.body.data;
         const tableName = koaObj.request.body.tableName;
 
-        const connectorWithTableName = ['gee', 'bigquery', 'nexgddp', 'worldbank', 'resourcewatch'];
+        const connectorWithTableName = ['gee', 'bigquery', 'nexgddp', 'worldbank', 'resourcewatch', 'hdx'];
 
         if (provider === 'genericindex') return true;
 
