@@ -1,15 +1,12 @@
-const logger = require('logger');
-const nock = require('nock');
 const ROLES = require('./test.constants').ROLES;
+const nock = require('nock');
 const chai = require('chai');
-const chaiHttp = require('chai-http');
 
-require('should');
+const should = chai.should();
 
-let requester;
+const { getTestServer } = require('./test-server');
 
-chai.use(chaiHttp);
-
+const requester = getTestServer();
 
 let referencedDataset = null;
 
@@ -39,89 +36,55 @@ function deserializeDataset(response) {
 describe('E2E test', () => {
 
     before(() => {
-
-        // simulating gateway communications
-        nock(`${process.env.CT_URL}`)
-            .persist()
-            .post(`/api/v1/microservice`)
-            .reply(200);
-
-        nock(`${process.env.CT_URL}/v1`)
-            .post('/rest-datasets/gee', () => true)
-            .reply(200, {
-                status: 200,
-                detail: 'Ok'
-            });
-
-        nock(`${process.env.CT_URL}/v1`)
-            .post('/rest-datasets/cartodb', () => true)
-            .reply(200, {
-                status: 200,
-                detail: 'Ok'
-            });
-
-        nock(`${process.env.CT_URL}/v1`)
-            .post('/rest-datasets/featureservice', () => true)
-            .reply(200, {
-                status: 200,
-                detail: 'Ok'
-            });
-
-        nock(`${process.env.CT_URL}/v1`)
-            .post('/doc-datasets/json', () => true)
-            .reply(200, {
-                status: 200,
-                detail: 'Ok'
-            });
-
-        nock(`${process.env.CT_URL}/v1`)
-            .post('/doc-datasets/json', () => true)
-            .reply(200, {
-                status: 200,
-                detail: 'Ok'
-            });
-
-        // fire up the test server
-        const server = require('../../src/app');
-        requester = chai.request(server).keepOpen();
+        nock.cleanAll();
     });
 
     it('Create a Generic Index Dataset', async () => {
-        let response = null;
+        nock(`${process.env.CT_URL}`)
+            .post(/v1\/graph\/dataset\/(\w|-)*$/)
+            .once()
+            .reply(200, {
+                status: 200,
+                detail: 'Ok'
+            });
+
         const timestamp = new Date().getTime();
         const dataset = {
             name: `Generic Index Dataset - ${timestamp}`,
             connectorType: 'rest',
             provider: 'genericindex'
         };
-        let createdDataset = null;
-        try {
-            response = await requester
-                .post(`/api/v1/dataset`)
-                .send({
-                    dataset,
-                    loggedUser: ROLES.ADMIN
-                });
-            createdDataset = deserializeDataset(response);
-            referencedDataset = response.body.data;
-        } catch (e) {
-            logger.error(e);
-        }
+        const response = await requester
+            .post(`/api/v1/dataset`)
+            .send({
+                dataset,
+                loggedUser: ROLES.ADMIN
+            });
+        const createdDataset = deserializeDataset(response);
+        referencedDataset = response.body.data;
+
         response.status.should.equal(200);
-        response.body.should.have.property('data').and.be.a.Object();
-        createdDataset.should.have.property('name').and.be.exactly(`Generic Index Dataset - ${timestamp}`);
-        createdDataset.should.have.property('connectorType').and.be.exactly('rest');
-        createdDataset.should.have.property('provider').and.be.exactly('genericindex');
-        createdDataset.should.have.property('userId').and.be.exactly(ROLES.ADMIN.id);
-        createdDataset.should.have.property('status').and.be.exactly('saved');
-        createdDataset.should.have.property('overwrite').and.be.exactly(false);
+        response.body.should.have.property('data').and.be.an('object');
+        createdDataset.should.have.property('name').and.equal(`Generic Index Dataset - ${timestamp}`);
+        createdDataset.should.have.property('connectorType').and.equal('rest');
+        createdDataset.should.have.property('provider').and.equal('genericindex');
+        createdDataset.should.have.property('userId').and.equal(ROLES.ADMIN.id);
+        createdDataset.should.have.property('status').and.equal('saved');
+        createdDataset.should.have.property('overwrite').and.equal(false);
         createdDataset.legend.should.be.an.instanceOf(Object);
         createdDataset.clonedHost.should.be.an.instanceOf(Object);
     });
 
     /* Create a Carto Dataset */
     it('Create a CARTO DB dataset', async () => {
-        let response = null;
+        nock(`${process.env.CT_URL}/v1`)
+            .post('/rest-datasets/cartodb', () => true)
+            .once()
+            .reply(200, {
+                status: 200,
+                detail: 'Ok'
+            });
+
         const timestamp = new Date().getTime();
         const dataset = {
             name: `Carto DB Dataset - ${timestamp}`,
@@ -132,37 +95,40 @@ describe('E2E test', () => {
             connectorUrl: 'https://wri-01.carto.com/tables/wdpa_protected_areas/table',
             overwrite: true
         };
-        let createdDataset = null;
-        try {
-            response = await requester
-                .post(`/api/v1/dataset`)
-                .send({
-                    dataset,
-                    loggedUser: ROLES.ADMIN
-                });
-            createdDataset = deserializeDataset(response);
-            referencedDataset = response.body.data;
-        } catch (e) {
-            logger.error(e);
-        }
+        const response = await requester
+            .post(`/api/v1/dataset`)
+            .send({
+                dataset,
+                loggedUser: ROLES.ADMIN
+            });
+        const createdDataset = deserializeDataset(response);
+        referencedDataset = response.body.data;
+
         response.status.should.equal(200);
-        response.body.should.have.property('data').and.be.a.Object();
-        createdDataset.should.have.property('name').and.be.exactly(`Carto DB Dataset - ${timestamp}`);
+        response.body.should.have.property('data').and.be.an('object');
+        createdDataset.should.have.property('name').and.equal(`Carto DB Dataset - ${timestamp}`);
         // createdDataset.application.should.be.an.instanceOf(Array).and.have.lengthOf(1);
-        createdDataset.should.have.property('connectorType').and.be.exactly('rest');
-        createdDataset.should.have.property('provider').and.be.exactly('cartodb');
-        createdDataset.should.have.property('connectorUrl').and.be.exactly('https://wri-01.carto.com/tables/wdpa_protected_areas/table');
-        createdDataset.should.have.property('tableName').and.be.exactly('wdpa_protected_areas');
-        createdDataset.should.have.property('userId').and.be.exactly(ROLES.ADMIN.id);
-        createdDataset.should.have.property('status').and.be.exactly('pending');
-        createdDataset.should.have.property('overwrite').and.be.exactly(true);
+        createdDataset.should.have.property('connectorType').and.equal('rest');
+        createdDataset.should.have.property('provider').and.equal('cartodb');
+        createdDataset.should.have.property('connectorUrl').and.equal('https://wri-01.carto.com/tables/wdpa_protected_areas/table');
+        createdDataset.should.have.property('tableName').and.equal('wdpa_protected_areas');
+        createdDataset.should.have.property('userId').and.equal(ROLES.ADMIN.id);
+        createdDataset.should.have.property('status').and.equal('pending');
+        createdDataset.should.have.property('overwrite').and.equal(true);
         createdDataset.legend.should.be.an.instanceOf(Object);
         createdDataset.clonedHost.should.be.an.instanceOf(Object);
     });
 
     /* Create a FeatureServer dataset */
     it('Create a FeatureServer dataset', async () => {
-        let response = null;
+        nock(`${process.env.CT_URL}/v1`)
+            .post('/rest-datasets/featureservice', () => true)
+            .once()
+            .reply(200, {
+                status: 200,
+                detail: 'Ok'
+            });
+
         const timestamp = new Date().getTime();
         const dataset = {
             name: `FeatureServer Dataset - ${timestamp}`,
@@ -173,34 +139,37 @@ describe('E2E test', () => {
             connectorUrl: 'http://services6.arcgis.com/bIipaUHHcz1GaAsv/arcgis/rest/services/Mineral_Development_Agreements/FeatureServer/0?f=pjson',
             overwrite: true
         };
-        let createdDataset = null;
-        try {
-            response = await requester.post(`/api/v1/dataset`).send({
-                dataset,
-                loggedUser: ROLES.ADMIN
-            });
-            createdDataset = deserializeDataset(response);
-        } catch (e) {
-            logger.error(e);
-        }
+
+        const response = await requester.post(`/api/v1/dataset`).send({
+            dataset,
+            loggedUser: ROLES.ADMIN
+        });
+        const createdDataset = deserializeDataset(response);
+
         response.status.should.equal(200);
-        response.body.should.have.property('data').and.be.a.Object();
-        createdDataset.should.have.property('name').and.be.exactly(`FeatureServer Dataset - ${timestamp}`);
+        response.body.should.have.property('data').and.be.an('object');
+        createdDataset.should.have.property('name').and.equal(`FeatureServer Dataset - ${timestamp}`);
         // createdDataset.application.should.be.an.instanceOf(Array).and.have.lengthOf(2);
-        createdDataset.should.have.property('connectorType').and.be.exactly('rest');
-        createdDataset.should.have.property('provider').and.be.exactly('featureservice');
-        createdDataset.should.have.property('connectorUrl').and.be.exactly('http://services6.arcgis.com/bIipaUHHcz1GaAsv/arcgis/rest/services/Mineral_Development_Agreements/FeatureServer/0?f=pjson');
-        createdDataset.should.have.property('tableName').and.be.exactly('Mineral_Development_Agreements');
-        createdDataset.should.have.property('userId').and.be.exactly(ROLES.ADMIN.id);
-        createdDataset.should.have.property('status').and.be.exactly('pending');
-        createdDataset.should.have.property('overwrite').and.be.exactly(true);
+        createdDataset.should.have.property('connectorType').and.equal('rest');
+        createdDataset.should.have.property('provider').and.equal('featureservice');
+        createdDataset.should.have.property('connectorUrl').and.equal('http://services6.arcgis.com/bIipaUHHcz1GaAsv/arcgis/rest/services/Mineral_Development_Agreements/FeatureServer/0?f=pjson');
+        createdDataset.should.have.property('tableName').and.equal('Mineral_Development_Agreements');
+        createdDataset.should.have.property('userId').and.equal(ROLES.ADMIN.id);
+        createdDataset.should.have.property('status').and.equal('pending');
+        createdDataset.should.have.property('overwrite').and.equal(true);
         createdDataset.legend.should.be.an.instanceOf(Object);
         createdDataset.clonedHost.should.be.an.instanceOf(Object);
     });
 
     /* Create a JSON */
     it('Create a JSON dataset', async () => {
-        let response = null;
+        nock(`${process.env.CT_URL}/v1`)
+            .post('/doc-datasets/json', () => true)
+            .reply(200, {
+                status: 200,
+                detail: 'Ok'
+            });
+
         const timestamp = new Date().getTime();
         const dataset = {
             name: `JSON Dataset - ${timestamp}`,
@@ -222,115 +191,94 @@ describe('E2E test', () => {
                 ]
             }
         };
-        let createdDataset = null;
-        try {
-            response = await requester.post(`/api/v1/dataset`).send({
-                dataset,
-                loggedUser: ROLES.ADMIN
-            });
-            createdDataset = deserializeDataset(response);
-        } catch (e) {
-            logger.error(e);
-        }
+
+        const response = await requester.post(`/api/v1/dataset`).send({
+            dataset,
+            loggedUser: ROLES.ADMIN
+        });
+        const createdDataset = deserializeDataset(response);
+
         response.status.should.equal(200);
-        response.body.should.have.property('data').and.be.a.Object();
-        createdDataset.should.have.property('name').and.be.exactly(`JSON Dataset - ${timestamp}`);
+        response.body.should.have.property('data').and.be.an('object');
+        createdDataset.should.have.property('name').and.equal(`JSON Dataset - ${timestamp}`);
         // createdDataset.application.should.be.an.instanceOf(Array).and.have.lengthOf(2);
-        createdDataset.should.have.property('connectorType').and.be.exactly('document');
-        createdDataset.should.have.property('provider').and.be.exactly('json');
+        createdDataset.should.have.property('connectorType').and.equal('document');
+        createdDataset.should.have.property('provider').and.equal('json');
         createdDataset.should.have.property('connectorUrl');
         createdDataset.should.have.property('tableName');
-        createdDataset.should.have.property('userId').and.be.exactly(ROLES.ADMIN.id);
-        createdDataset.should.have.property('status').and.be.exactly('pending');
-        createdDataset.should.have.property('overwrite').and.be.exactly(false);
+        createdDataset.should.have.property('userId').and.equal(ROLES.ADMIN.id);
+        createdDataset.should.have.property('status').and.equal('pending');
+        createdDataset.should.have.property('overwrite').and.equal(false);
         createdDataset.legend.should.be.an.instanceOf(Object);
         createdDataset.clonedHost.should.be.an.instanceOf(Object);
     });
 
     /* Get All Datasets */
     it('Get datasets', async () => {
-        let response = null;
-        try {
-            response = await requester.get(`/api/v1/dataset`).send();
-        } catch (e) {
-            logger.error(e);
-        }
+        const response = await requester.get(`/api/v1/dataset`).send();
+
         response.status.should.equal(200);
-        response.body.should.have.property('data').and.be.a.Array();
-        response.body.should.have.property('links').and.be.a.Object();
+        response.body.should.have.property('data').and.be.an('array');
+        response.body.should.have.property('links').and.be.an('object');
     });
 
     /* Get a specific dataset */
     it('Get one dataset', async () => {
-        let response = null;
-        let dataset = null;
-        try {
-            response = await requester.get(`/api/v1/dataset/${referencedDataset.id}`).send();
-            dataset = deserializeDataset(response);
-        } catch (e) {
-            logger.error(e);
-        }
+        const response = await requester.get(`/api/v1/dataset/${referencedDataset.id}`).send();
+        const dataset = deserializeDataset(response);
+
         response.status.should.equal(200);
-        response.body.should.have.property('data').and.be.a.Object();
-        dataset.should.have.property('name').and.be.exactly(referencedDataset.attributes.name);
+        response.body.should.have.property('data').and.be.an('object');
+        dataset.should.have.property('name').and.equal(referencedDataset.attributes.name);
     });
 
     /* Pagination */
     it('Get 3 datasets', async () => {
-        let response = null;
-        try {
-            response = await requester.get(`/api/v1/dataset?page[number]=1&page[size]=3`).send();
-        } catch (e) {
-            logger.error(e);
-        }
+        const response = await requester.get(`/api/v1/dataset?page[number]=1&page[size]=3`).send();
+
         response.status.should.equal(200);
         response.body.should.have.property('data').with.lengthOf(3);
-        response.body.should.have.property('links').and.be.a.Object();
+        response.body.should.have.property('links').and.be.an('object');
     });
 
     /* Update */
     it('Update a dataset', async () => {
-        let response = null;
-        let dataset = null;
-        try {
-            response = await requester
-                .patch(`/api/v1/dataset/${referencedDataset.id}`)
-                .send({
-                    name: 'other name',
-                    application: ['gfw', 'rw'],
-                    loggedUser: ROLES.ADMIN
-                });
-            dataset = deserializeDataset(response);
-        } catch (e) {
-            logger.error(e);
-        }
+        const response = await requester
+            .patch(`/api/v1/dataset/${referencedDataset.id}`)
+            .send({
+                name: 'other name',
+                application: ['gfw', 'rw'],
+                loggedUser: ROLES.ADMIN
+            });
+        const dataset = deserializeDataset(response);
+
         response.status.should.equal(200);
-        response.body.should.have.property('data').and.be.a.Object();
-        dataset.should.have.property('name').and.be.exactly('other name');
+        response.body.should.have.property('data').and.be.an('object');
+        dataset.should.have.property('name').and.equal('other name');
         // dataset.application.should.be.an.instanceOf(Array).and.have.lengthOf(2);
-        dataset.should.have.property('connectorType').and.be.exactly('rest');
-        dataset.should.have.property('provider').and.be.exactly('cartodb');
-        dataset.should.have.property('connectorUrl').and.be.exactly('https://wri-01.carto.com/tables/wdpa_protected_areas/table');
-        dataset.should.have.property('tableName').and.be.exactly('wdpa_protected_areas');
-        dataset.should.have.property('userId').and.be.exactly(ROLES.ADMIN.id);
-        dataset.should.have.property('status').and.be.exactly('pending');
-        dataset.should.have.property('overwrite').and.be.exactly(true);
+        dataset.should.have.property('connectorType').and.equal('rest');
+        dataset.should.have.property('provider').and.equal('cartodb');
+        dataset.should.have.property('connectorUrl').and.equal('https://wri-01.carto.com/tables/wdpa_protected_areas/table');
+        dataset.should.have.property('tableName').and.equal('wdpa_protected_areas');
+        dataset.should.have.property('userId').and.equal(ROLES.ADMIN.id);
+        dataset.should.have.property('status').and.equal('pending');
+        dataset.should.have.property('overwrite').and.equal(true);
         dataset.legend.should.be.an.instanceOf(Object);
         dataset.clonedHost.should.be.an.instanceOf(Object);
     });
 
     /* Delete */
     it('Not authorized dataset deletion', async () => {
-        try {
-            await requester
-                .delete(`/api/v1/dataset/${referencedDataset.id}?loggedUser=null`)
-                .send();
-        } catch (e) {
-            logger.error(e);
-            e.response.status.should.equal(401);
-        }
+        const response = await requester
+            .delete(`/api/v1/dataset/${referencedDataset.id}?loggedUser=null`)
+            .send();
+
+        response.status.should.equal(401);
     });
 
-    after(() => {
+    afterEach(() => {
+        if (!nock.isDone()) {
+            throw new Error(`Not all nock interceptors were used: ${nock.pendingMocks()}`);
+        }
     });
 });
