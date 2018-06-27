@@ -38,9 +38,12 @@ class DatasetRouter {
     }
 
     static notifyAdapter(ctx, dataset, userId) {
-        const connectorType = dataset.connectorType;
         const provider = dataset.provider;
+        if (provider === 'genericindex') {
+            return;
+        }
         const clonedDataset = Object.assign({}, dataset.toObject());
+        const connectorType = dataset.connectorType;
         clonedDataset.id = dataset._id;
         clonedDataset.connector_url = dataset.connectorUrl;
         clonedDataset.attributes_path = dataset.attributesPath;
