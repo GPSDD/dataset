@@ -1,41 +1,25 @@
 const ROLES = require('./test.constants').ROLES;
 const nock = require('nock');
 const chai = require('chai');
+const Dataset = require('models/dataset.model');
 
 const should = chai.should();
 
+const { deserializeDataset } = require('./utils');
 const { getTestServer } = require('./test-server');
 
 const requester = getTestServer();
 
-let referencedDataset = null;
 
-function isArray(element) {
-    if (element instanceof Array) {
-        return true;
-    }
-    return false;
-}
-
-function isObject(property) {
-    if (property instanceof Object && property.length === undefined) {
-        return true;
-    }
-    return false;
-}
-
-function deserializeDataset(response) {
-    if (isArray(response.body.data)) {
-        return response.body.data.map(el => el.attributes);
-    } else if (isObject(response.body.data)) {
-        return response.body.data.attributes;
-    }
-    return response;
-}
-
-describe('E2E test', () => {
+describe('Dataset create tests', () => {
 
     before(() => {
+        if (process.env.NODE_ENV !== 'test') {
+            throw Error(`Running the test suite with NODE_ENV ${process.env.NODE_ENV} may result in permanent data loss. Please use NODE_ENV=test.`);
+        }
+
+        Dataset.remove({}).exec();
+
         nock.cleanAll();
     });
 
@@ -61,7 +45,6 @@ describe('E2E test', () => {
                 loggedUser: ROLES.ADMIN
             });
         const createdDataset = deserializeDataset(response);
-        referencedDataset = response.body.data;
 
         response.status.should.equal(200);
         response.body.should.have.property('data').and.be.an('object');
@@ -77,6 +60,14 @@ describe('E2E test', () => {
 
     /* Create a Carto Dataset */
     it('Create a CARTO DB dataset', async () => {
+        nock(`${process.env.CT_URL}`)
+            .post(/v1\/graph\/dataset\/(\w|-)*$/)
+            .once()
+            .reply(200, {
+                status: 200,
+                detail: 'Ok'
+            });
+
         nock(`${process.env.CT_URL}/v1`)
             .post('/rest-datasets/cartodb', () => true)
             .once()
@@ -102,7 +93,6 @@ describe('E2E test', () => {
                 loggedUser: ROLES.ADMIN
             });
         const createdDataset = deserializeDataset(response);
-        referencedDataset = response.body.data;
 
         response.status.should.equal(200);
         response.body.should.have.property('data').and.be.an('object');
@@ -213,72 +203,13 @@ describe('E2E test', () => {
         createdDataset.clonedHost.should.be.an.instanceOf(Object);
     });
 
-    /* Get All Datasets */
-    it('Get datasets', async () => {
-        const response = await requester.get(`/api/v1/dataset`).send();
-
-        response.status.should.equal(200);
-        response.body.should.have.property('data').and.be.an('array');
-        response.body.should.have.property('links').and.be.an('object');
-    });
-
-    /* Get a specific dataset */
-    it('Get one dataset', async () => {
-        const response = await requester.get(`/api/v1/dataset/${referencedDataset.id}`).send();
-        const dataset = deserializeDataset(response);
-
-        response.status.should.equal(200);
-        response.body.should.have.property('data').and.be.an('object');
-        dataset.should.have.property('name').and.equal(referencedDataset.attributes.name);
-    });
-
-    /* Pagination */
-    it('Get 3 datasets', async () => {
-        const response = await requester.get(`/api/v1/dataset?page[number]=1&page[size]=3`).send();
-
-        response.status.should.equal(200);
-        response.body.should.have.property('data').with.lengthOf(3);
-        response.body.should.have.property('links').and.be.an('object');
-    });
-
-    /* Update */
-    it('Update a dataset', async () => {
-        const response = await requester
-            .patch(`/api/v1/dataset/${referencedDataset.id}`)
-            .send({
-                name: 'other name',
-                application: ['gfw', 'rw'],
-                loggedUser: ROLES.ADMIN
-            });
-        const dataset = deserializeDataset(response);
-
-        response.status.should.equal(200);
-        response.body.should.have.property('data').and.be.an('object');
-        dataset.should.have.property('name').and.equal('other name');
-        // dataset.application.should.be.an.instanceOf(Array).and.have.lengthOf(2);
-        dataset.should.have.property('connectorType').and.equal('rest');
-        dataset.should.have.property('provider').and.equal('cartodb');
-        dataset.should.have.property('connectorUrl').and.equal('https://wri-01.carto.com/tables/wdpa_protected_areas/table');
-        dataset.should.have.property('tableName').and.equal('wdpa_protected_areas');
-        dataset.should.have.property('userId').and.equal(ROLES.ADMIN.id);
-        dataset.should.have.property('status').and.equal('pending');
-        dataset.should.have.property('overwrite').and.equal(true);
-        dataset.legend.should.be.an.instanceOf(Object);
-        dataset.clonedHost.should.be.an.instanceOf(Object);
-    });
-
-    /* Delete */
-    it('Not authorized dataset deletion', async () => {
-        const response = await requester
-            .delete(`/api/v1/dataset/${referencedDataset.id}?loggedUser=null`)
-            .send();
-
-        response.status.should.equal(401);
-    });
-
     afterEach(() => {
         if (!nock.isDone()) {
             throw new Error(`Not all nock interceptors were used: ${nock.pendingMocks()}`);
         }
+    });
+
+    after(() => {
+        Dataset.remove({}).exec();
     });
 });
