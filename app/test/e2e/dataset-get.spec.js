@@ -3,9 +3,10 @@ const nock = require('nock');
 const chai = require('chai');
 const Dataset = require('models/dataset.model');
 
-const should = chai.should();
-
 const { getTestServer } = require('./test-server');
+const { getUUID } = require('./utils');
+
+const should = chai.should();
 
 const requester = getTestServer();
 
@@ -14,7 +15,7 @@ let genericFakeDataset;
 let jsonFakeDataset;
 
 
-describe('Dataset get tests', () => {
+describe('Get datasets tests', () => {
 
     before(async () => {
         if (process.env.NODE_ENV !== 'test') {
@@ -31,7 +32,7 @@ describe('Dataset get tests', () => {
     });
 
     /* Get All Datasets */
-    it('Get datasets', async () => {
+    it('Get all datasets with no arguments should be successful', async () => {
         const response = await requester.get(`/api/v1/dataset`).send();
 
         response.status.should.equal(200);
@@ -39,14 +40,22 @@ describe('Dataset get tests', () => {
         response.body.should.have.property('links').and.be.an('object');
     });
 
-    /* Get a specific dataset */
-    it('Get one dataset', async () => {
+    it('Get an existing dataset by ID should be successful', async () => {
         const response = await requester.get(`/api/v1/dataset/${cartoFakeDataset._id}`).send();
         const dataset = deserializeDataset(response);
 
         response.status.should.equal(200);
         response.body.should.have.property('data').and.be.an('object');
         dataset.should.have.property('name').and.equal(cartoFakeDataset.name);
+    });
+
+    it('Get an non-existing dataset by ID should fail', async () => {
+        const uuid = getUUID();
+        const response = await requester.get(`/api/v1/dataset/${uuid}`).send();
+
+        response.status.should.equal(404);
+        response.body.should.have.property('errors').and.be.an('array');
+        response.body.errors[0].should.have.property('detail').and.equal(`Dataset with id '${uuid}' doesn't exist`);
     });
 
     /* Pagination */

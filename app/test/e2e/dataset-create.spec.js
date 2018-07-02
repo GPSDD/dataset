@@ -2,11 +2,10 @@ const ROLES = require('./test.constants').ROLES;
 const nock = require('nock');
 const chai = require('chai');
 const Dataset = require('models/dataset.model');
+const { deserializeDataset, createDataset } = require('./utils');
+const { getTestServer } = require('./test-server');
 
 const should = chai.should();
-
-const { deserializeDataset } = require('./utils');
-const { getTestServer } = require('./test-server');
 
 const requester = getTestServer();
 
@@ -23,7 +22,7 @@ describe('Dataset create tests', () => {
         nock.cleanAll();
     });
 
-    it('Create a Generic Index Dataset', async () => {
+    it('Create a Generic Index dataset should be successful', async () => {
         nock(`${process.env.CT_URL}`)
             .post(/v1\/graph\/dataset\/(\w|-)*$/)
             .once()
@@ -59,7 +58,7 @@ describe('Dataset create tests', () => {
     });
 
     /* Create a Carto Dataset */
-    it('Create a CARTO DB dataset', async () => {
+    it('Create a CARTO DB dataset should be successful', async () => {
         nock(`${process.env.CT_URL}`)
             .post(/v1\/graph\/dataset\/(\w|-)*$/)
             .once()
@@ -110,7 +109,7 @@ describe('Dataset create tests', () => {
     });
 
     /* Create a FeatureServer dataset */
-    it('Create a FeatureServer dataset', async () => {
+    it('Create a FeatureServer dataset should be successful', async () => {
         nock(`${process.env.CT_URL}/v1`)
             .post('/rest-datasets/featureservice', () => true)
             .once()
@@ -152,7 +151,7 @@ describe('Dataset create tests', () => {
     });
 
     /* Create a JSON */
-    it('Create a JSON dataset', async () => {
+    it('Create a JSON dataset should be successful', async () => {
         nock(`${process.env.CT_URL}/v1`)
             .post('/doc-datasets/json', () => true)
             .reply(200, {

@@ -25,6 +25,8 @@ const deserializeDataset = (response) => {
     return response;
 }
 
+const getUUID = () => Math.random().toString(36).substring(7);
+
 const createDataset = (provider) => {
     let connectorType = '';
 
@@ -39,7 +41,7 @@ const createDataset = (provider) => {
         throw Error(`Attempted to create dataset with invalid provider type: ${provider}`);
     }
 
-    const uuid = Math.random().toString(36).substring(7);
+    const uuid = getUUID();
 
     return {
         name: `Fake dataset ${uuid}`,
@@ -66,5 +68,6 @@ const createDataset = (provider) => {
 
 module.exports = {
     createDataset,
-    deserializeDataset
+    deserializeDataset,
+    getUUID
 };
