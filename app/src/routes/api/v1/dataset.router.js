@@ -27,6 +27,12 @@ const serializeObjToQuery = (obj) => Object.keys(obj).reduce((a, k) => {
     return a;
 }, []).join('&');
 
+const arrayIntersection = (arr1, arr2) => {
+    return arr1.filter((n) => {
+        return arr2.indexOf(n) !== -1;
+    });
+};
+
 class DatasetRouter {
 
     static getUser(ctx) {
@@ -179,6 +185,8 @@ class DatasetRouter {
         logger.info(`[DatasetRouter] Getting all datasets`);
         const query = ctx.query;
         const userId = ctx.query.loggedUser && ctx.query.loggedUser !== 'null' ? JSON.parse(ctx.query.loggedUser).id : null;
+        const search = ctx.query.search;
+        const sort = ctx.query.sort || '';
         delete query.loggedUser;
         if (Object.keys(query).find(el => el.indexOf('vocabulary[') >= 0)) {
             ctx.query.ids = await RelationshipsService.filterByVocabularyTag(query);
@@ -207,6 +215,35 @@ class DatasetRouter {
             ctx.query.ids = ctx.query.ids.length > 0 ? ctx.query.ids.join(',') : '';
             logger.debug('Ids from collections', ctx.query.ids);
         }
+        if (search || serializeObjToQuery(query).indexOf('concepts[0][0]') >= 0 || sort.indexOf('most-favorited') >= 0 || sort.indexOf('most-viewed') >= 0 || sort.indexOf('metadata') >= 0) {
+            let searchIds = null;
+            let conceptIds = null;
+            if (search) {
+                const metadataIds = await RelationshipsService.filterByMetadata(search);
+                const searchBySynonmysIds = await RelationshipsService.searchBySynonyms(serializeObjToQuery(query));
+                const datasetBySearchIds = await DatasetService.getDatasetIdsBySearch(search.split(' '));
+                searchIds = metadataIds.concat(searchBySynonmysIds).concat(datasetBySearchIds);
+            }
+            if (serializeObjToQuery(query).indexOf('concepts[0][0]') >= 0 || sort.indexOf('most-favorited') >= 0 || sort.indexOf('most-viewed') >= 0) {
+                conceptIds = await RelationshipsService.filterByConcepts(serializeObjToQuery(query));
+            }
+            if (sort.indexOf('metadata') >= 0) {
+                const queryCopy = Object.assign({}, query);
+                delete queryCopy.sort;
+                const sign = sort[sort.indexOf('metadata') - 1] === '-' ? '-' : '';
+                conceptIds = await RelationshipsService.sortByMetadata(sign, queryCopy);
+            }
+            if ((searchIds && searchIds.length === 0) || (conceptIds && conceptIds.length === 0)) {
+                ctx.body = DatasetSerializer.serialize([], null);
+                return;
+            }
+            // searchIds = searchIds || [];
+            // conceptIds = conceptIds || [];
+            const finalIds = searchIds && conceptIds ? arrayIntersection(searchIds, conceptIds) : searchIds || conceptIds;
+            const uniqueIds = new Set([...finalIds]); // Intersect and unique
+            ctx.query.ids = [...uniqueIds].join(); // it has to be string
+        }
+
         // Links creation
         const clonedQuery = Object.assign({}, query);
         delete clonedQuery['page[size]'];

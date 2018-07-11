@@ -217,6 +217,19 @@ class RelationshipsService {
         }
     }
 
+    static async filterByConcepts(query) {
+        try {
+            const result = await ctRegisterMicroservice.requestToMicroservice({
+                uri: `/graph/query/search-datasets-ids?${query}`,
+                method: 'GET',
+                json: true
+            });
+            return result.data;
+        } catch (e) {
+            throw new Error(e);
+        }
+    }
+
 }
 
 module.exports = RelationshipsService;
