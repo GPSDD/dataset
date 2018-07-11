@@ -10,6 +10,9 @@ const serializeObjToQuery = obj => Object.keys(obj).reduce((a, k) => {
 class RelationshipsService {
 
     static treatQuery(query) {
+        if (!query.application && query.app) {
+            query.application = query.app;
+        }
         delete query.includes;
         return query;
     }
@@ -217,10 +220,51 @@ class RelationshipsService {
         }
     }
 
+    static async filterByMetadata(search) {
+        try {
+            const result = await ctRegisterMicroservice.requestToMicroservice({
+                uri: `/metadata?search=${search}`,
+                method: 'GET',
+                json: true
+            });
+            logger.debug(result);
+            return result.data.map(m => m.attributes.dataset);
+        } catch (e) {
+            throw new Error(e);
+        }
+    }
+
+    static async sortByMetadata(sign, query) {
+        try {
+            const result = await ctRegisterMicroservice.requestToMicroservice({
+                uri: `/metadata?sort=${sign}name&type=dataset&${query}`,
+                method: 'GET',
+                json: true
+            });
+            logger.debug(result);
+            return result.data.map(m => m.attributes.dataset);
+        } catch (e) {
+            throw new Error(e);
+        }
+    }
+
     static async filterByConcepts(query) {
         try {
             const result = await ctRegisterMicroservice.requestToMicroservice({
                 uri: `/graph/query/search-datasets-ids?${query}`,
+                method: 'GET',
+                json: true
+            });
+            return result.data;
+        } catch (e) {
+            throw new Error(e);
+        }
+    }
+
+    static async searchBySynonyms(query) {
+        try {
+            const result = await ctRegisterMicroservice.requestToMicroservice({
+                uri: `/graph/query/search-by-label-synonyms?${query}`,
                 method: 'GET',
                 json: true
             });
