@@ -471,6 +471,17 @@ class DatasetService {
         return permission;
     }
 
+    static async getDatasetIdsBySearch(search) {
+        // are we sure?
+        const searchQuery = [
+            { name: new RegExp(search.map(w => `(?=.*${w})`).join(''), 'i') },
+            { subtitle: new RegExp(search.map(w => `(?=.*${w})`).join(''), 'i') }
+        ];
+        const query = { $or: searchQuery };
+        const datasets = await Dataset.find(query);
+        const datasetIds = datasets.map(el => el._id);
+        return datasetIds;
+    }
 }
 
 module.exports = DatasetService;
