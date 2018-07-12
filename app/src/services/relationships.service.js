@@ -22,31 +22,32 @@ class RelationshipsService {
         let resources = includes.map(async (include) => {
             const obj = {};
             if (INCLUDES.indexOf(include) >= 0) {
-                let uri = '';
+                let baseUri = '';
                 let payload = {
                     ids
                 };
                 let version = true;
                 if (include === 'vocabulary' || include === 'metadata') {
-                    uri = '/dataset';
+                    baseUri = '/dataset';
                 }
                 if (include === 'user') {
                     payload = {
                         ids: users
                     };
                     version = false;
-                    uri = '/auth';
+                    baseUri = '/auth';
                 }
+                const uri = `${baseUri}/${include}/find-by-ids?${serializeObjToQuery(RelationshipsService.treatQuery(query))}`;
                 try {
                     obj[include] = await ctRegisterMicroservice.requestToMicroservice({
-                        uri: `${uri}/${include}/find-by-ids?${serializeObjToQuery(RelationshipsService.treatQuery(query))}`,
+                        uri,
                         method: 'POST',
                         json: true,
                         body: payload,
                         version
                     });
                 } catch (e) {
-                    throw new Error(e);
+                    throw new Error(`Error finding datasets by id with URL '${uri}' and error ${e}`);
                 }
             }
             return obj;
