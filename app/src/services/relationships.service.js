@@ -29,6 +29,7 @@ class RelationshipsService {
                 let version = true;
                 if (include === 'vocabulary' || include === 'metadata') {
                     uri = '/dataset';
+                    delete query.ids;
                 }
                 if (include === 'user') {
                     payload = {
