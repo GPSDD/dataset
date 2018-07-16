@@ -377,9 +377,30 @@ const authorizationMiddleware = async (ctx, next) => {
     await next(); // SUPERADMIN is included here
 };
 
+const authorizationBigQuery = async (ctx, next) => {
+    logger.info(`[DatasetRouter] Checking if bigquery dataset`);
+    // Get user from query (delete) or body (post-patch)
+    const user = DatasetRouter.getUser(ctx);
+    if (
+        ctx.request.body.provider === 'bigquery' &&
+        (
+            user.email !== 'elnels@gmail.com' &&
+            user.email !== 'alaurenzi@data4sdgs.org' &&
+            user.email !== 'sergio.gordillo@vizzuality.com' &&
+            user.email !== 'raul.requero@vizzuality.com' &&
+            user.email !== 'alicia.arenzana@vizzuality.com' &&
+            user.email !== 'enrique.cornejo@vizzuality.com'
+        )
+    ) {
+        ctx.throw(401, 'Unauthorized');
+        return;
+    }
+    await next();
+};
+
 router.get('/', DatasetRouter.getAll);
 router.post('/find-by-ids', DatasetRouter.findByIds);
-router.post('/', validationMiddleware, authorizationMiddleware, DatasetRouter.create);
+router.post('/', validationMiddleware, authorizationMiddleware, authorizationBigQuery, DatasetRouter.create);
 router.post('/upload', validationMiddleware, authorizationMiddleware, DatasetRouter.upload);
 
 router.get('/:dataset', DatasetRouter.get);
