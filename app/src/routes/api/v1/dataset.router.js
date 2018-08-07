@@ -383,14 +383,7 @@ const authorizationBigQuery = async (ctx, next) => {
     const user = DatasetRouter.getUser(ctx);
     if (
         ctx.request.body.provider === 'bigquery' &&
-        (
-            user.email !== 'elnels@gmail.com' &&
-            user.email !== 'alaurenzi@data4sdgs.org' &&
-            user.email !== 'sergio.gordillo@vizzuality.com' &&
-            user.email !== 'raul.requero@vizzuality.com' &&
-            user.email !== 'alicia.arenzana@vizzuality.com' &&
-            user.email !== 'enrique.cornejo@vizzuality.com'
-        )
+        ( user.role === 'MANAGER' || user.role === 'ADMIN' )
     ) {
         ctx.throw(401, 'Unauthorized');
         return;
