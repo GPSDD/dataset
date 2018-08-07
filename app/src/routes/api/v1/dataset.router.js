@@ -383,7 +383,7 @@ const authorizationBigQuery = async (ctx, next) => {
     const user = DatasetRouter.getUser(ctx);
     if (
         ctx.request.body.provider === 'bigquery' &&
-        ( user.role === 'MANAGER' || user.role === 'ADMIN' )
+        !( user.role === 'MANAGER' || user.role === 'ADMIN' )
     ) {
         ctx.throw(401, 'Unauthorized');
         return;
