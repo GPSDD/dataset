@@ -69,7 +69,7 @@ class DatasetService {
         Object.keys(query).forEach((param) => {
             if (datasetAttributes.indexOf(param) < 0 && param !== 'usersRole') {
                 delete query[param];
-            } else if (param !== 'env' && param !== 'userId' && param !== 'usersRole') {
+            } else if (param !== 'env' && param !== 'userId' && param !== 'usersRole' && param !== 'name') {
                 switch (Dataset.schema.paths[param].instance) {
 
                 case 'String':
@@ -112,6 +112,19 @@ class DatasetService {
             } else if (param === 'userId') {
                 logger.debug('params userid', query[param]);
                 query.userId = Object.assign({}, query.userId || {}, query[param]);
+            } 
+            else if (param === 'name') {
+                logger.debug('params name', query[param]);
+                if(query[param].indexOf(' ') > -1) {
+                    query[param] = {
+                        $all: query[param].split(' ').map(elem => elem.trim())
+                    };    
+                } else {
+                    query[param] = {
+                        $regex: query[param],
+                        $options: 'i'
+                    };
+                }
             }
         });
         if (ids.length > 0 || collection || favourite) {
@@ -399,9 +412,9 @@ class DatasetService {
         const limit = query['page[size]'] ? parseInt(query['page[size]'], 10) : 10;
         const ids = query.ids ? query.ids.split(',').map(elem => elem.trim()) : [];
 
-        if(query.name && query.name.split(' ').length > 1) {
-            query.name = {$all:query.name.split(' ')}
-        }
+        // if(query.name && query.name.split(' ').length > 1) {
+        //     query.name = {$all:query.name.split(' ')}
+        // }
 
         const includes = query.includes ? query.includes.split(',').map(elem => elem.trim()) : [];
         const filteredQuery = DatasetService.getFilteredQuery(Object.assign({}, query), ids);
