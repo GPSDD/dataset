@@ -57,6 +57,10 @@ const Dataset = new Schema({
     updatedAt: { type: Date, default: Date.now }
 });
 
+Dataset.index({
+    name: 'text'
+});
+
 Dataset.plugin(mongoosePaginate);
 
 module.exports = mongoose.model('Dataset', Dataset);

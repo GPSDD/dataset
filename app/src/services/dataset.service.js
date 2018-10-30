@@ -115,16 +115,8 @@ class DatasetService {
             } 
             else if (param === 'name') {
                 logger.debug('params name', query[param]);
-                if(query[param].indexOf(' ') > -1) {
-                    query[param] = {
-                        $all: query[param].split(' ').map(elem => elem.trim())
-                    };    
-                } else {
-                    query[param] = {
-                        $regex: query[param],
-                        $options: 'i'
-                    };
-                }
+                query['$text'] = { $search: query[param] };
+                delete query[param];
             }
         });
         if (ids.length > 0 || collection || favourite) {
