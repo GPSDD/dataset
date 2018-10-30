@@ -115,6 +115,7 @@ class DatasetService {
             } 
             else if (param === 'name') {
                 logger.debug('params name', query[param]);
+                //run text search -- matches must include all words, although they can be separate
                 query['$text'] = { $search: query[param].split(" ").map(x => `"${x}"`).join(" ") };
                 delete query[param];
             }
