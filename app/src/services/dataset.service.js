@@ -398,6 +398,11 @@ class DatasetService {
         const page = query['page[number]'] ? parseInt(query['page[number]'], 10) : 1;
         const limit = query['page[size]'] ? parseInt(query['page[size]'], 10) : 10;
         const ids = query.ids ? query.ids.split(',').map(elem => elem.trim()) : [];
+
+        if(query.name && query.name.split(' ').length > 1) {
+            query.name = {$all:query.name.split(' ')}
+        }
+
         const includes = query.includes ? query.includes.split(',').map(elem => elem.trim()) : [];
         const filteredQuery = DatasetService.getFilteredQuery(Object.assign({}, query), ids);
         const filteredSort = DatasetService.getFilteredSort(sort);
