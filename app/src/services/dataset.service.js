@@ -115,7 +115,7 @@ class DatasetService {
             } 
             else if (param === 'name') {
                 logger.debug('params name', query[param]);
-                query['$text'] = { $search: query[param] };
+                query['$text'] = { $search: query[param].split(" ").map(x => `"${x}"`).join(" ") };
                 delete query[param];
             }
         });
