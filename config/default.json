@@ -14,5 +14,6 @@
         "host": "mymachine",
         "port": 27017
     },
-    "stampery": "STAMPERY_TOKEN"
+    "stampery": "STAMPERY_TOKEN",
+    "sparkpost": "SPARKPOST_API_KEY"    
 }

@@ -82,6 +82,11 @@ spec:
                 secretKeyRef:
                   name: dbsecrets
                   key: REDIS_URI
+          - name: SPARKPOST_API_KEY
+            valueFrom:
+                secretKeyRef:
+                  name: mssecrets
+                  key: SPARKPOST_API_KEY
 
         ports:
           - containerPort: 3000
