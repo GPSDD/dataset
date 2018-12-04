@@ -68,6 +68,11 @@ spec:
                 secretKeyRef:
                   name: mssecrets
                   key: S3_SECRET_ACCESS_KEY
+          - name: SPARKPOST_API_KEY
+            valueFrom:
+                secretKeyRef:
+                  name: mssecrets
+                  key: SPARKPOST_API_KEY
 
         ports:
           - containerPort: 3000

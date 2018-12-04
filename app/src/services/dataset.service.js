@@ -11,8 +11,10 @@ const ConnectorUrlNotValid = require('errors/connectorUrlNotValid.error');
 const SyncError = require('errors/sync.error');
 const GraphService = require('services/graph.service');
 const slug = require('slug');
+const MailService = require('services/mail.service');
 
 const stage = process.env.NODE_ENV;
+
 
 class DatasetService {
 
@@ -209,6 +211,7 @@ class DatasetService {
                     id: 'microservice'
                 });
             }
+            await MailService.sendDatasetMail(newDataset, [{ address: 'elnels@gmail.com' }]);
         }
         // if vocabularies
         if (dataset.vocabularies) {
