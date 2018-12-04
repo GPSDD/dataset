@@ -3,12 +3,12 @@ const Promise = require('bluebird');
 const logger = require('logger');
 
 const sparkpostKey = process.env.SPARKPOST_API_KEY;
+logger.debug('sparkpostKey ', sparkpostKey);
 const Client = new SparkPost(sparkpostKey);
 
 class MailService {
 
    static async sendDatasetMail(data, recipients) {
-        logger.debug('sparkpostKey ', sparkpostKey);
         logger.debug('Sending dataset created to ', recipients);
         const reqOpts = {
             transmissionBody: {
