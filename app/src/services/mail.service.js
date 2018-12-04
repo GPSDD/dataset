@@ -2,7 +2,6 @@ const SparkPost = require('sparkpost');
 const Promise = require('bluebird');
 const logger = require('logger');
 
-const SparkPost = require('sparkpost');
 const sparkpostKey = process.env.SPARKPOST_API_KEY;
 const Client = new SparkPost(sparkpostKey);
 
