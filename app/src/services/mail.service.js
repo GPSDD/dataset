@@ -10,7 +10,7 @@ class MailService {
 
   async sendDatasetMail(data, recipients) {
       logger.debug('Sending dataset created to ', recipients);
-      logger.debug('sparkpostKey ', config.get('sparkpost'));
+      logger.debug('sparkpostKey ', process.env.SPARKPOST_API_KEY);
       const reqOpts = {
           transmissionBody: {
               substitution_data: {
