@@ -357,6 +357,18 @@ class DatasetService {
         });
     }
 
+    static async deleteVocabulary(datasetId) {
+        logger.info('Deleting vocabulary of dataset', datasetId);
+        await ctRegisterMicroservice.requestToMicroservice({
+            uri: `/dataset/${datasetId}/vocabulary/legacy`,
+            method: 'DELETE'
+        });
+        await ctRegisterMicroservice.requestToMicroservice({
+            uri: `/dataset/${datasetId}/vocabulary/knowledge_graph`,
+            method: 'DELETE'
+        });
+    }
+
     static async delete(id, user) {
         logger.debug(`[DatasetService]: Getting dataset with id:  ${id}`);
         logger.info(`[DBACCESS-FIND]: dataset.id: ${id}`);
@@ -395,6 +407,12 @@ class DatasetService {
             await DatasetService.deleteMetadata(id);
         } catch (err) {
             logger.error('Error removing metadata', err);
+        }
+        logger.debug('[DatasetService]: Deleting Vocabulary');
+        try {
+            await DatasetService.deleteVocabulary(id);
+        } catch (err) {
+            logger.error('Error removing vocabulary', err);
         }
         // remove the dataset at the end
         const deletedDataset = await currentDataset.remove();
