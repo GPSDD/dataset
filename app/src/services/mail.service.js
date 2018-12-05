@@ -9,7 +9,7 @@ class MailService {
     this.client = new SparkPost(config.get('sparkpost'));
   }
 
-  static async sendDatasetMail(data, recipients) {
+  async sendDatasetMail(data, recipients) {
       logger.debug('Sending dataset created to ', recipients);
       const reqOpts = {
           transmissionBody: {
