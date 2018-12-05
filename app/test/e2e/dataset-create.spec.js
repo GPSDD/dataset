@@ -31,6 +31,16 @@ describe('Dataset create tests', () => {
                 detail: 'Ok'
             });
 
+        nock(`https://api.sparkpost.com:443`)
+            .post()
+            .once()
+            .reply(200, {
+                status: 200,
+                detail: 'Ok'
+            });
+
+            
+
         const timestamp = new Date().getTime();
         const dataset = {
             name: `Generic Index Dataset - ${timestamp}`,
@@ -60,6 +70,14 @@ describe('Dataset create tests', () => {
     /* Create a Carto Dataset */
     it('Create a CARTO DB dataset should be successful', async () => {
         nock(`${process.env.CT_URL}`)
+            .post(/v1\/graph\/dataset\/(\w|-)*$/)
+            .once()
+            .reply(200, {
+                status: 200,
+                detail: 'Ok'
+            });
+
+            nock(`${process.env.CT_URL}`)
             .post(/v1\/graph\/dataset\/(\w|-)*$/)
             .once()
             .reply(200, {
