@@ -32,7 +32,7 @@ describe('Dataset create tests', () => {
             });
 
         nock(`https://api.sparkpost.com:443`)
-            .post()
+            .post(/\//)
             .once()
             .reply(200, {
                 status: 200,
@@ -84,6 +84,15 @@ describe('Dataset create tests', () => {
                 status: 200,
                 detail: 'Ok'
             });
+
+        nock(`https://api.sparkpost.com:443`)
+            .post(/\//)
+            .once()
+            .reply(200, {
+                status: 200,
+                detail: 'Ok'
+            });
+
 
         nock(`${process.env.CT_URL}/v1`)
             .post('/rest-datasets/cartodb', () => true)
