@@ -211,7 +211,7 @@ class DatasetService {
                     id: 'microservice'
                 });
             }
-            await MailService.sendDatasetMail(newDataset, [{ address: 'elnels@gmail.com' }]);
+            //await MailService.sendDatasetMail(newDataset, [{ address: 'elnels@gmail.com' }]);
         }
         // if vocabularies
         if (dataset.vocabularies) {

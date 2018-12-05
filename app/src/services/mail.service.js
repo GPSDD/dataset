@@ -5,7 +5,7 @@ const config = require('config');
 
 class MailService {
   constructor() {
-    this.client = new SparkPost(process.env.SPARKPOST_API_KEY);
+    //this.client = new SparkPost(process.env.SPARKPOST_API_KEY);
   }
 
   async sendDatasetMail(data, recipients) {
@@ -25,13 +25,13 @@ class MailService {
       };
       return new Promise((resolve, reject) => {
         logger.debug(reqOpts);
-          this.client.transmissions.send(reqOpts, (error, res) => {
-              if (error) {
-                  reject(error);
-              } else {
-                  resolve(res);
-              }
-          });
+        //   this.client.transmissions.send(reqOpts, (error, res) => {
+        //       if (error) {
+        //           reject(error);
+        //       } else {
+        //           resolve(res);
+        //       }
+        //   });
       });
   }
 }
