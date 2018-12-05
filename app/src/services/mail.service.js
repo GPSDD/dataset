@@ -5,7 +5,7 @@ const config = require('config');
 
 class MailService {
   constructor() {
-    this.client = new SparkPost(config.get('sparkpost'));
+    this.client = new SparkPost(process.env.SPARKPOST_API_KEY);
   }
 
   async sendDatasetMail(data, recipients) {

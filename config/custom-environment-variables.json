@@ -6,6 +6,5 @@
     "service": {
         "port": "PORT"
     },
-    "stampery": "STAMPERY_TOKEN",
-    "sparkpost": "SPARKPOST_API_KEY"
+    "stampery": "STAMPERY_TOKEN"
 }
