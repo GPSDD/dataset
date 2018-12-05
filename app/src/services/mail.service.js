@@ -5,12 +5,12 @@ const config = require('config');
 
 class MailService {
   constructor() {
-    logger.debug('sparkpostKey ', config.get('sparkpost'));
     this.client = new SparkPost(config.get('sparkpost'));
   }
 
   async sendDatasetMail(data, recipients) {
       logger.debug('Sending dataset created to ', recipients);
+      logger.debug('sparkpostKey ', config.get('sparkpost'));
       const reqOpts = {
           transmissionBody: {
               substitution_data: {
