@@ -5,7 +5,7 @@ const config = require('config');
 
 class MailService {
   constructor() {
-    logger.debug('sparkpostKey ', sparkpostKey);
+    logger.debug('sparkpostKey ', config.get('sparkpost'));
     this.client = new SparkPost(config.get('sparkpost'));
   }
 
