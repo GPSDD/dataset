@@ -30,16 +30,7 @@ describe('Dataset create tests', () => {
                 status: 200,
                 detail: 'Ok'
             });
-
-        nock(`https://api.sparkpost.com:443`)
-            .post(/\//)
-            .once()
-            .reply(200, {
-                status: 200,
-                detail: 'Ok'
-            });
-
-            
+         
 
         const timestamp = new Date().getTime();
         const dataset = {
@@ -76,23 +67,6 @@ describe('Dataset create tests', () => {
                 status: 200,
                 detail: 'Ok'
             });
-
-            nock(`${process.env.CT_URL}`)
-            .post(/v1\/graph\/dataset\/(\w|-)*$/)
-            .once()
-            .reply(200, {
-                status: 200,
-                detail: 'Ok'
-            });
-
-        nock(`https://api.sparkpost.com:443`)
-            .post(/\//)
-            .once()
-            .reply(200, {
-                status: 200,
-                detail: 'Ok'
-            });
-
 
         nock(`${process.env.CT_URL}/v1`)
             .post('/rest-datasets/cartodb', () => true)
